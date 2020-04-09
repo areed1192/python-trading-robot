@@ -13,8 +13,21 @@ trading_robot_portfolio = trading_robot.create_portfolio()
 
 postions = [('MSFT', 10), ('AAPL',20), ('AA',10)]
 
-trading_robot_portfolio.add_position(symbol = 'MSFT', quantity = 10, purchase_price = 10, asset_type = 'equity', purchase_date = '2020-04-01')
-trading_robot_portfolio.add_position(symbol = 'AAPL', quantity = 10, purchase_price = 10, asset_type = 'equity', purchase_date = '2020-04-01')
+trading_robot_portfolio.add_position(
+    symbol = 'MSFT', 
+    quantity = 10, 
+    purchase_price = 10, 
+    asset_type = 'equity',
+    purchase_date = '2020-04-01'
+)
+
+trading_robot_portfolio.add_position(
+    symbol = 'AAPL', 
+    quantity = 10, 
+    purchase_price = 10, 
+    asset_type = 'equity', 
+    purchase_date = '2020-04-01'
+)
 
 print(trading_robot_portfolio.positions)
 
