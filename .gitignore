@@ -129,3 +129,4 @@ dmypy.json
 .pyre/
 pyrobot/config.py
 tests/config.py
+.vscode/settings.json

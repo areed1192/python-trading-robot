@@ -1,0 +1,30 @@
+{
+    "MSFT": {
+        "bid_price": 165.7,
+        "ask_price": 165.99,
+        "last_price": 165.7,
+        "open_price": 165.67,
+        "high_price": 166.67,
+        "low_price": 163.5,
+        "close_price": 163.49,
+        "total_volume": 48318234,
+        "quote_time": 1586390396750,
+        "trade_time": 1586390396750,
+        "regular_market_last_price": 165.13,
+        "regular_market_trade_time": 1586376000354
+    },
+    "AAPL": {
+        "bid_price": 267.35,
+        "ask_price": 267.36,
+        "last_price": 267.33,
+        "open_price": 262.74,
+        "high_price": 267.37,
+        "low_price": 261.23,
+        "close_price": 259.43,
+        "total_volume": 42223821,
+        "quote_time": 1586390399572,
+        "trade_time": 1586390398976,
+        "regular_market_last_price": 266.07,
+        "regular_market_trade_time": 1586376000713
+    }
+}
