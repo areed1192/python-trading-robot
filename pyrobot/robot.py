@@ -202,12 +202,36 @@ class PyRobot():
         Keyword Arguments:
         ----
         order_type {str} -- Defines the type of order to initalize. Possible values
-            are 'mkt', 'lmt', 'stop', 'stop-lmt', 'trailign-stop' (default: {'mkt'})
+            are `'mkt', 'lmt', 'stop', 'stop-lmt', 'trailign-stop'` (default: {'mkt'})
+        
+        Usage:
+        ----
+            >>> trading_robot = PyRobot(
+                client_id=CLIENT_ID, 
+                redirect_uri=REDIRECT_URI, 
+                credentials_path=CREDENTIALS_PATH
+            )
+            >>> new_trade = trading_robot_portfolio.create_trade(
+                enter_or_exit='enter',
+                long_or_short='long',
+                order_type='mkt'
+            )
+            >>> new_trade
         
         Returns:
-            Trade -- [description]
+        ----
+            Trade -- A pyrobot.Trade object with the specified template.
         """
-        pass
+
+        trade = Trade()
+        
+        trade.new_trade(
+            order_type=order_type,
+            side=long_or_short,
+            enter_or_exit=enter_or_exit
+        )
+
+        return trade
 
     def delete_trade(self):
         pass

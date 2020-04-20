@@ -1,5 +1,6 @@
 
 import pprint
+from datetime import datetime
 from configparser import ConfigParser
 from pyrobot.robot import PyRobot
 
@@ -75,3 +76,13 @@ elif trading_robot.pre_market_open:
 
 # Print the Positions
 pprint.pprint(trading_robot_portfolio.positions)
+
+# Create a new Trade Object.
+new_trade = trading_robot.create_trade(enter_or_exit='enter', long_or_short='short',order_type='stop')
+
+# Make it Good Till Cancel.
+new_trade.good_till_cancel(cancel_time=datetime.now())
+
+# Change the session
+new_trade.modify_session(session='am')
+pprint.pprint(new_trade.order)
