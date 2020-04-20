@@ -1,4 +1,6 @@
 from typing import Tuple
+from typing import List
+from typing import Iterable
 
 class Portfolio():
 
@@ -16,10 +18,83 @@ class Portfolio():
         self.risk_tolerance: float = 0.00
         self.account_number: str = account_number
 
-    def add_positions(self, positions = None):
-        pass
+    def add_positions(self, positions: List[dict]) -> dict:
+        """Add Multiple positions to the portfolio at once.
 
-    def add_position(self, symbol: str, asset_type: str, quantity: int = 0, purchase_price: float = 0.00, purchase_date: str = None) -> dict:
+        This method will take an iterable containing the values
+        normally passed through in the `add_position` endpoint and
+        then adds each position to the portfolio.
+        
+        Arguments:
+        ----
+        positions {list[dict]} -- Multiple positions with the required arguments to be added.
+
+        Usage:
+        ----
+            # Define mutliple positions to add.
+            >>> multi_position = [
+                {
+                    'asset_type': 'equity',
+                    'quantity': 2,
+                    'purchase_price': 4.00,
+                    'symbol': 'TSLA',
+                    'purchase_date': '2020-01-31'
+                },
+                {
+                    'asset_type': 'equity',
+                    'quantity': 2,
+                    'purchase_price': 4.00,
+                    'symbol': 'SQ',
+                    'purchase_date': '2020-01-31'
+                }
+            ]
+            >>> new_positions = trading_robot.portfolio.add_positions(positions=multi_position)
+            {
+                'SQ': {
+                    'asset_type': 'equity',
+                    'purchase_date': '2020-01-31',
+                    'purchase_price': 4.00,
+                    'quantity': 2,
+                    'symbol': 'SQ'
+                },
+                'TSLA': {
+                    'asset_type': 'equity',
+                    'purchase_date': '2020-01-31',
+                    'purchase_price': 4.00,
+                    'quantity': 2,
+                    'symbol': 'TSLA'
+                }
+            }
+
+        Returns:
+        ----
+        dict -- A dictionary containing multiple positions.
+        """
+        
+        if isinstance(positions, list):
+
+            return_dict = {}
+
+            for position in positions:
+
+                symbol = position['symbol']
+
+                self.positions[symbol] = {}
+                self.positions[symbol]['symbol'] = position['symbol']
+                self.positions[symbol]['quantity'] = position.get('quantity',0)
+                self.positions[symbol]['purchase_price'] = position.get('purchase_price',0.00)
+                self.positions[symbol]['purchase_date'] = position.get('purchase_date',None)
+                self.positions[symbol]['asset_type'] = position['asset_type']
+
+                return_dict[symbol] = self.positions[symbol]
+
+            return return_dict
+
+        else:
+            raise TypeError('Positions must be a list of dictionaries.')
+
+    def add_position(self, symbol: str, asset_type: str, quantity: int = 0, purchase_price: float = 0.00, 
+                     purchase_date: str = None) -> dict:
         """Adds a single new position to the the portfolio.
         
         Arguments:
@@ -47,13 +122,13 @@ class Portfolio():
                     purchase_price=4.00,
                     purchase_date="2020-01-31")
             >>> new_position
-                {
-                    'asset_type': 'equity', 
-                    'quantity': 2, 
-                    'purchase_price': 4.00,
-                    'symbol': 'MSFT',
-                    'purchase_date': '2020-01-31'
-                }           
+            {
+                'asset_type': 'equity', 
+                'quantity': 2, 
+                'purchase_price': 4.00,
+                'symbol': 'MSFT',
+                'purchase_date': '2020-01-31'
+            }           
         
         Returns:
         ----
@@ -153,7 +228,24 @@ class Portfolio():
         else:
             return False
 
-    def is_porfitable(self, symbol = None, current_price = None):
+    def is_porfitable(self, symbol: str, current_price: float) -> bool:
+        """Specifies whether a position is profitable.
+        
+        Arguments:
+        ----
+        symbol {str} -- The symbol of the instrument, to check profitability.
+
+        current_price {float} -- The current trading price of the instrument.
+
+        Usage:
+        ----
+
+        
+        Returns:
+        ----
+            bool -- Specifies whether the position is profitable or flat (True) or not
+                profitable (False).
+        """
         
         if symbol in self.positions and self.positions[symbol]['purchase_price'] < current_price:
             return True

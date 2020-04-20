@@ -14,15 +14,34 @@ ACCOUNT_NUMBER = config.get('main', 'ACCOUNT_NUMBER')
 
 # Initalize the robot
 trading_robot = PyRobot(
-    client_id=CLIENT_ID, 
-    redirect_uri=REDIRECT_URI, 
+    client_id=CLIENT_ID,
+    redirect_uri=REDIRECT_URI,
     credentials_path=CREDENTIALS_PATH
 )
 
 # Create a Portfolio
 trading_robot_portfolio = trading_robot.create_portfolio()
 
-print(trading_robot_portfolio)
+# Define mutliple positions to add.
+multi_position = [
+    {
+        'asset_type': 'equity',
+        'quantity': 2,
+        'purchase_price': 4.00,
+        'symbol': 'TSLA',
+        'purchase_date': '2020-01-31'
+    },
+    {
+        'asset_type': 'equity',
+        'quantity': 2,
+        'purchase_price': 4.00,
+        'symbol': 'SQ',
+        'purchase_date': '2020-01-31'
+    }
+]
+
+new_positions = trading_robot.portfolio.add_positions(positions=multi_position)
+pprint.pprint(new_positions)
 
 # Add a single position
 trading_robot_portfolio.add_position(
@@ -42,9 +61,6 @@ trading_robot_portfolio.add_position(
     purchase_date='2020-04-01'
 )
 
-# Print the Positions
-pprint.pprint(trading_robot_portfolio.positions)
-
 # If the Market is open, print some quotes.
 if trading_robot.regular_market_open:
     pprint.pprint(trading_robot.grab_current_quotes())
@@ -56,3 +72,6 @@ elif trading_robot.post_market_open:
 # If the Pre Market is Open, do something.
 elif trading_robot.pre_market_open:
     pprint.pprint(trading_robot.grab_current_quotes())
+
+# Print the Positions
+pprint.pprint(trading_robot_portfolio.positions)

@@ -1,6 +1,7 @@
 from td.client import TDClient
 from datetime import datetime, time, timezone
 from pyrobot.portfolio import Portfolio
+from pyrobot.trades import Trade
 
 class PyRobot():
 
@@ -184,7 +185,28 @@ class PyRobot():
 
         return self.portfolio
 
-    def create_trade(self):
+    def create_trade(self, enter_or_exit: str, long_or_short: str, order_type: str = 'mkt') -> Trade:
+        """Initalizes a new instance of a Trade Object.
+
+        This helps simplify the process of building an order by using pre-built templates that can be
+        easily modified to incorporate more complex strategies.
+
+        Arguments:
+        ----
+        enter_or_exit {str} -- Defines whether this trade will be used to enter or exit a position.
+            If used to enter, specify `enter`. If used to exit, speicfy `exit`.
+
+        long_or_short {str} -- Defines whether this trade will be used to go long or short a position.
+            If used to go long, specify `long`. If used to go short, speicfy `short`.
+        
+        Keyword Arguments:
+        ----
+        order_type {str} -- Defines the type of order to initalize. Possible values
+            are 'mkt', 'lmt', 'stop', 'stop-lmt', 'trailign-stop' (default: {'mkt'})
+        
+        Returns:
+            Trade -- [description]
+        """
         pass
 
     def delete_trade(self):
