@@ -4,48 +4,52 @@ from pyrobot.portfolio import Portfolio
 
 class PyRobot():
 
-    def __init__(self, trading_account = None, consumer_id = None, redirect_uri = None, json_path = None):
-        '''
-            Initalizes a new instance of the robot and logs into the API platform specified.
+    def __init__(self, client_id: str, redirect_uri: str, credentials_path: str = None, trading_account: str = None) -> None:
+        """Initalizes a new instance of the robot and logs into the API platform specified.
+        
+        Arguments:
+        ----
+        client_id {str} -- The Consumer ID assigned to you during the App registration. 
+            This can be found at the app registration portal.
 
-            NAME: trading_account
-            DESC: This is the account number for your main TD Ameritrade Account.
-            TYPE: String
+        redirect_uri {str} -- This is the redirect URL that you specified when you created your
+            TD Ameritrade Application.
+        
+        Keyword Arguments:
+        ----
+        credentials_path {str} -- The path to the session state file used to prevent a full 
+            OAuth workflow. (default: {None})
 
-            NAME: consumer_id
-            DESC: The Consumer ID assigned to you during the App registration. This can
-                  be found at the app registration portal.
-            TYPE: String
+        trading_account {str} -- Your TD Ameritrade account number. (default: {None})
 
-            NAME: redirect_uri
-            DESC: This is the redirect URL that you specified when you created your
-                  TD Ameritrade Application.    
-            TYPE: String
-
-            NAME: json_path
-            DESC: The path to the session state file used to prevent a full 
-                  OAuth workflow.   
-            TYPE: String
-        '''
+        """
 
         # Set the attirbutes
-        self.trading_account = trading_account
-        self.consumer_id = consumer_id
-        self.redirect_uri = redirect_uri
-        self.json_path = json_path
-        self.session = self._create_session()
-        self.trades = {}
+        self.trading_account: str = trading_account
+        self.client_id: str = client_id
+        self.redirect_uri: str = redirect_uri
+        self.credentials_path:str = credentials_path
+        self.session: TDClient = self._create_session()
+        self.trades: dict = {}
 
-    def _create_session(self):
-        '''
-            Creates a new session with the TD Ameritrade API and logs the user into
-            the new session.
+    def _create_session(self) -> TDClient:
+        """Start a new session.
+        
+        Creates a new session with the TD Ameritrade API and logs the user into
+        the new session.
 
-            RTYPE: td.TDClient
-        '''
+        Returns:
+        ----
+            TDClient -- A TDClient object with an authenticated sessions.
+
+        """
 
         # Create a new instance of the client
-        td_client = TDClient(account_number = self.trading_account, consumer_id = self.consumer_id, redirect_uri = self.redirect_uri, json_path = self.json_path)
+        td_client = TDClient(
+            client_id = self.client_id, 
+            redirect_uri = self.redirect_uri, 
+            credentials_path = self.credentials_path
+        )
 
         # log the client into the new session
         td_client.login()
@@ -53,12 +57,28 @@ class PyRobot():
         return td_client
     
     @property
-    def pre_market_open(self):
-        '''
-            Returns whether we are in pre-market trading or not.
+    def pre_market_open(self) -> bool:
+        """Checks if pre-market is open.
 
-            RTYPE: Boolean
-        '''
+        Uses the datetime module to create US Pre-Market Equity hours in
+        UTC time.
+
+        Usage:
+        ----
+            >>> trading_robot = PyRobot(
+            client_id=CLIENT_ID, 
+            redirect_uri=REDIRECT_URI, 
+            credentials_path=CREDENTIALS_PATH
+            )
+            >>> pre_market_open_flag = trading_robot.pre_market_open
+            >>> pre_market_open_flag
+            True
+        
+        Returns:
+        ----
+        bool -- True if pre-market is open, False otherwise.
+
+        """
 
         pre_market_start_time = datetime.now().replace(hour = 12, minute = 00, second = 00, tzinfo = timezone.utc).timestamp()
         market_start_time = datetime.now().replace(hour = 13, minute = 30, second = 00, tzinfo = timezone.utc).timestamp()
@@ -72,11 +92,27 @@ class PyRobot():
 
     @property
     def post_market_open(self):
-        '''
-            Returns whether we are in after-hours trading or not.
+        """Checks if post-market is open.
 
-            RTYPE: Boolean
-        '''
+        Uses the datetime module to create US Post-Market Equity hours in
+        UTC time.
+
+        Usage:
+        ----
+            >>> trading_robot = PyRobot(
+            client_id=CLIENT_ID, 
+            redirect_uri=REDIRECT_URI, 
+            credentials_path=CREDENTIALS_PATH
+            )
+            >>> post_market_open_flag = trading_robot.post_market_open
+            >>> post_market_open_flag
+            True
+        
+        Returns:
+        ----
+        bool -- True if post-market is open, False otherwise.
+
+        """
 
         post_market_end_time = datetime.now().replace(hour = 22, minute = 30, second = 00, tzinfo = timezone.utc).timestamp()
         market_end_time = datetime.now().replace(hour = 20, minute = 00, second = 00, tzinfo = timezone.utc).timestamp()
@@ -89,11 +125,27 @@ class PyRobot():
 
     @property
     def regular_market_open(self):
-        '''
-            Returns whether we are in after-hours trading or not.
+        """Checks if regular market is open.
 
-            RTYPE: Boolean
-        '''
+        Uses the datetime module to create US Regular Market Equity hours in
+        UTC time.
+
+        Usage:
+        ----
+            >>> trading_robot = PyRobot(
+            client_id=CLIENT_ID, 
+            redirect_uri=REDIRECT_URI, 
+            credentials_path=CREDENTIALS_PATH
+            )
+            >>> market_open_flag = trading_robot.market_open
+            >>> market_open_flag
+            True
+        
+        Returns:
+        ----
+        bool -- True if post-market is open, False otherwise.
+
+        """
 
         market_start_time = datetime.now().replace(hour = 13, minute = 30, second = 00, tzinfo = timezone.utc).timestamp()
         market_end_time = datetime.now().replace(hour = 20, minute = 00, second = 00, tzinfo = timezone.utc).timestamp()
@@ -104,13 +156,28 @@ class PyRobot():
         else:
             return False
 
-    def create_portfolio(self):
-        '''
-            Creates a Portfolio Object to help store and organize positions
-            as they are added and removed during trading.
+    def create_portfolio(self) -> Portfolio:
+        """Create a new portfolio.
 
-            RTYPE: pyrobot.Portfolio
-        '''        
+        Creates a Portfolio Object to help store and organize positions
+        as they are added and removed during trading.
+
+        Usage:
+        ----
+            >>> trading_robot = PyRobot(
+            client_id=CLIENT_ID, 
+            redirect_uri=REDIRECT_URI, 
+            credentials_path=CREDENTIALS_PATH
+            )
+            >>> portfolio = trading_robot.create_portfolio()
+            >>> portfolio
+            <pyrobot.portfolio.Portfolio object at 0x0392BF88>
+        
+        Returns:
+        ----
+        Portfolio -- A pyrobot.Portfolio object with no positions.
+
+        """  
 
         # Initalize the portfolio.
         self.portfolio = Portfolio(account_number = self.trading_account)
@@ -123,12 +190,79 @@ class PyRobot():
     def delete_trade(self):
         pass
 
-    def grab_current_quotes(self):
-        '''
-            Grabs current quotes for all the positions in the portfolios.
+    def grab_current_quotes(self) -> dict:
+        """Grabs the current quotes for all positions in the portfolio.
 
-            RTYPE: Dictionary
-        '''
+        Makes a call to the TD Ameritrade Get Quotes endpoint with all
+        the positions in the portfolio. If only one position exist it will
+        return a single dicitionary, otherwise a nested dictionary.
+
+        Usage:
+        ----
+            >>> trading_robot = PyRobot(
+                client_id=CLIENT_ID, 
+                redirect_uri=REDIRECT_URI, 
+                credentials_path=CREDENTIALS_PATH
+            )
+            >>> trading_robot_portfolio.add_position(
+            symbol='MSFT',
+            asset_type='equity'
+            )
+            >>> current_quote = trading_robot.grab_current_quotes()
+            >>> current_quote
+            {
+                "MSFT": {
+                    "assetType": "EQUITY",
+                    "assetMainType": "EQUITY",
+                    "cusip": "594918104",
+                    ...
+                    "regularMarketPercentChangeInDouble": 0,
+                    "delayed": true
+                }
+            }
+
+            >>> trading_robot = PyRobot(
+            client_id=CLIENT_ID, 
+            redirect_uri=REDIRECT_URI, 
+            credentials_path=CREDENTIALS_PATH
+            )
+            >>> trading_robot_portfolio.add_position(
+            symbol='MSFT',
+            asset_type='equity'
+            )
+            >>> trading_robot_portfolio.add_position(
+            symbol='AAPL',
+            asset_type='equity'
+            )
+            >>> current_quote = trading_robot.grab_current_quotes()
+            >>> current_quote
+
+            {
+                "MSFT": {
+                    "assetType": "EQUITY",
+                    "assetMainType": "EQUITY",
+                    "cusip": "594918104",
+                    ...
+                    "regularMarketPercentChangeInDouble": 0,
+                    "delayed": False
+                },
+                "AAPL": {
+                    "assetType": "EQUITY",
+                    "assetMainType": "EQUITY",
+                    "cusip": "037833100",
+                    ...
+                    "regularMarketPercentChangeInDouble": 0,
+                    "delayed": False
+                }
+            }
+
+
+        
+        Returns:
+        ---
+        dict -- A dictionary containing all the quotes for each position.
+
+        """
 
         # First grab all the symbols.
         symbols = self.portfolio.positions.keys()
