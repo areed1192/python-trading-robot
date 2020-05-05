@@ -41,6 +41,7 @@ multi_position = [
     }
 ]
 
+# Grab the New positions
 new_positions = trading_robot.portfolio.add_positions(positions=multi_position)
 pprint.pprint(new_positions)
 
@@ -78,11 +79,24 @@ elif trading_robot.pre_market_open:
 pprint.pprint(trading_robot_portfolio.positions)
 
 # Create a new Trade Object.
-new_trade = trading_robot.create_trade(enter_or_exit='enter', long_or_short='short',order_type='stop')
+new_trade = trading_robot.create_trade(
+    enter_or_exit='enter',
+    long_or_short='short',
+    order_type='lmt',
+    price=150.00
+)
 
 # Make it Good Till Cancel.
 new_trade.good_till_cancel(cancel_time=datetime.now())
 
 # Change the session
 new_trade.modify_session(session='am')
+
+# Add an Order Leg.
+new_trade.instrument(symbol='MSFT', quantity=2, asset_type='EQUITY')
+
+# Add a Stop Loss Order with the Main Order.
+new_trade.add_stop_loss(stop_size=.10, percentage=False)
+
+# Print out the order.
 pprint.pprint(new_trade.order)

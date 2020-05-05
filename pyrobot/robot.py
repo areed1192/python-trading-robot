@@ -41,7 +41,7 @@ class PyRobot():
 
         Returns:
         ----
-            TDClient -- A TDClient object with an authenticated sessions.
+        TDClient -- A TDClient object with an authenticated sessions.
 
         """
 
@@ -185,7 +185,7 @@ class PyRobot():
 
         return self.portfolio
 
-    def create_trade(self, enter_or_exit: str, long_or_short: str, order_type: str = 'mkt') -> Trade:
+    def create_trade(self, enter_or_exit: str, long_or_short: str, order_type: str = 'mkt', price: float = 0.0, stop_limit_price = 0.0) -> Trade:
         """Initalizes a new instance of a Trade Object.
 
         This helps simplify the process of building an order by using pre-built templates that can be
@@ -204,6 +204,13 @@ class PyRobot():
         order_type {str} -- Defines the type of order to initalize. Possible values
             are `'mkt', 'lmt', 'stop', 'stop-lmt', 'trailign-stop'` (default: {'mkt'})
         
+        price {float} -- The Price to be associate with the order. If the order type is `stop` or `stop-lmt` then 
+            it is the stop price, if it is a `lmt` order then it is the limit price, and `mkt` is the market 
+            price.(default: {0.0})
+
+        stop_limit_price {float} -- Only used if the order is a `stop-lmt` and represents the limit price of
+            the `stop-lmt` order. (default: {0.0})
+        
         Usage:
         ----
             >>> trading_robot = PyRobot(
@@ -217,18 +224,47 @@ class PyRobot():
                 order_type='mkt'
             )
             >>> new_trade
+
+            >>> new_market_trade = trading_robot_portfolio.create_trade(
+                enter_or_exit='enter',
+                long_or_short='long',
+                order_type='mkt',
+                price=12.00
+            )
+            >>> new_market_trade
+
+            >>> new_stop_trade = trading_robot_portfolio.create_trade(
+                enter_or_exit='enter',
+                long_or_short='long',
+                order_type='stop',
+                price=2.00
+            )
+            >>> new_stop_trade
+
+            >>> new_stop_limit_trade = trading_robot_portfolio.create_trade(
+                enter_or_exit='enter',
+                long_or_short='long',
+                order_type='stop-lmt',
+                price=2.00,
+                stop_limit_price=1.90
+            )
+            >>> new_stop_limit_trade
         
         Returns:
         ----
-            Trade -- A pyrobot.Trade object with the specified template.
+        Trade -- A pyrobot.Trade object with the specified template.
         """
 
+        # Initalize a new trade object.
         trade = Trade()
         
+        # Create a new trade.
         trade.new_trade(
             order_type=order_type,
             side=long_or_short,
-            enter_or_exit=enter_or_exit
+            enter_or_exit=enter_or_exit,
+            price=price,
+            stop_limit_price=stop_limit_price
         )
 
         return trade
@@ -302,10 +338,8 @@ class PyRobot():
                 }
             }
 
-
-        
         Returns:
-        ---
+        ----
         dict -- A dictionary containing all the quotes for each position.
 
         """

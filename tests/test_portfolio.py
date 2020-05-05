@@ -10,12 +10,6 @@ import unittest
 from unittest import TestCase
 from configparser import ConfigParser
 
-# Add path to PyRobot.
-sys.path.insert(0, os.path.abspath(
-    os.path.join(os.path.dirname(__file__), '..')
-    )
-)
-
 from pyrobot.robot import PyRobot
 from pyrobot.portfolio import Portfolio
 from configparser import ConfigParser

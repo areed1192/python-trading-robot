@@ -33,9 +33,7 @@ setup(
 
     # there are some dependencies to use the library, so let's list them out.
     install_requires=[
-        'websockets>=8.0.2',
-        'requests>=2.22.0',
-        'td-ameritrade-python-api>=0.2.3'
+        'td-ameritrade-python-api'
     ],
 
     # some keywords for my library.
