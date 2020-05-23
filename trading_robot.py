@@ -1,8 +1,13 @@
 
 import pprint
+import pathlib
+import pandas as pd
+
 from datetime import datetime
+from datetime import timedelta
 from configparser import ConfigParser
 from pyrobot.robot import PyRobot
+from pyrobot.indicators import Indicators
 
 # Grab configuration values.
 config = ConfigParser()
@@ -100,3 +105,30 @@ new_trade.add_stop_loss(stop_size=.10, percentage=False)
 
 # Print out the order.
 pprint.pprint(new_trade.order)
+
+# Grab historical prices, first define the start date and end date.
+start_date = datetime.today()
+end_date = start_date - timedelta(days=30)
+
+# Grab the historical prices.
+historical_prices = trading_robot.grab_historical_prices(
+    start=end_date,
+    end=start_date,
+    bar_size=1,
+    bar_type='minute'
+)
+
+# Convert data to a Data Frame.
+stock_frame = trading_robot.create_stock_frame(data=historical_prices['aggregated'])
+
+# Create an indicator Object.
+indicator_client = Indicators(price_data_frame=stock_frame)
+
+# Add the RSI Indicator.
+indicator_client.rsi(period=14)
+
+# Add the 200 day simple moving average.
+indicator_client.sma(period=200)
+
+# Add the 50 day exponentials moving average.
+indicator_client.ema(period=50)

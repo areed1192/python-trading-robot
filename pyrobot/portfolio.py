@@ -8,7 +8,8 @@ class Portfolio():
         """Initalizes a new instance of the Portfolio object.
         
         Keyword Arguments:
-            account_number {str} -- An accout number to associate with the Portfolio. (default: {None})
+        ----
+        account_number {str} -- An accout number to associate with the Portfolio. (default: {None})
         """
         
         self.positions: dict = {}
@@ -93,8 +94,7 @@ class Portfolio():
         else:
             raise TypeError('Positions must be a list of dictionaries.')
 
-    def add_position(self, symbol: str, asset_type: str, quantity: int = 0, purchase_price: float = 0.00, 
-                     purchase_date: str = None) -> dict:
+    def add_position(self, symbol: str, asset_type: str, quantity: int = 0, purchase_price: float = 0.00, purchase_date: str = None) -> dict:
         """Adds a single new position to the the portfolio.
         
         Arguments:
@@ -220,7 +220,7 @@ class Portfolio():
 
         Returns:
         ----
-            bool -- `True` if the position is in the portfolio, `False` otherwise.
+        bool -- `True` if the position is in the portfolio, `False` otherwise.
         """
 
         if symbol in self.positions:
@@ -243,8 +243,8 @@ class Portfolio():
         
         Returns:
         ----
-            bool -- Specifies whether the position is profitable or flat (True) or not
-                profitable (False).
+        bool -- Specifies whether the position is profitable or flat (True) or not
+            profitable (False).
         """
         
         if symbol in self.positions and self.positions[symbol]['purchase_price'] < current_price:

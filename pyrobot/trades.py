@@ -176,7 +176,7 @@ class Trade():
 
         # Add a stop Loss Order.
         if not stop_limit:
-            self.add_stop_loss(profit_size=profit_size, percentage=percentage)
+            self.add_stop_loss(stop_size=profit_size, percentage=percentage)
 
     def add_stop_loss(self, stop_size: float, percentage: bool = False) -> bool:
         """Add's a stop loss order to exit the position when a certain loss is reached.

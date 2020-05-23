@@ -1,7 +1,19 @@
+import pandas as pd
+
 from td.client import TDClient
-from datetime import datetime, time, timezone
+from td.utils import milliseconds_since_epoch
+
+from datetime import datetime
+from datetime import time
+from datetime import timezone
+
 from pyrobot.portfolio import Portfolio
 from pyrobot.trades import Trade
+from pyrobot.stock_frame import StockFrame
+
+from typing import List
+from typing import Dict
+from typing import Union
 
 class PyRobot():
 
@@ -29,9 +41,11 @@ class PyRobot():
         self.trading_account: str = trading_account
         self.client_id: str = client_id
         self.redirect_uri: str = redirect_uri
-        self.credentials_path:str = credentials_path
+        self.credentials_path: str = credentials_path
         self.session: TDClient = self._create_session()
         self.trades: dict = {}
+        self.historical_prices: dict = {}
+        self.stock_frame = None
 
     def _create_session(self) -> TDClient:
         """Start a new session.
@@ -351,3 +365,76 @@ class PyRobot():
         quotes = self.session.get_quotes(instruments = list(symbols))
 
         return quotes
+
+    def grab_historical_prices(self, start: datetime, end: datetime, bar_size: int = 1, bar_type: str = 'minute', data_frame: bool = False) -> Union[List[Dict], pd.DataFrame]:
+        """Grabs the historical prices for all the postions in a portfolio.
+
+        Overview:
+        ----
+        Any of the historical price data returned will include extended hours
+        price data by default.
+
+        Arguments:
+        ----
+        start {datetime} -- Defines the start date for the historical prices.
+        
+        end {datetime} -- Defines the end date for the historical prices.
+
+        Keyword Arguments:
+        ----
+        bar_size {int} -- Defines the size of each bar. (default: {1})
+        
+        bar_type {str} -- Defines the bar type, can be one of the following:
+            `['minute', 'week', 'month', 'year']` (default: {'minute'})
+
+        Returns:
+        ----
+        {List[Dict]} -- The historical price candles.
+
+        Usage:
+        ----
+        """        
+
+        start = str(milliseconds_since_epoch(dt_object=start))
+        end = str(milliseconds_since_epoch(dt_object=end))
+
+        new_prices = []
+
+        for symbol in self.portfolio.positions:
+
+            historical_prices_response = self.session.get_price_history(
+                symbol=symbol,
+                period_type='day',
+                start_date=start,
+                end_date=end,
+                frequency_type=bar_type,
+                frequency=bar_size,
+                extended_hours=True
+            )
+
+            self.historical_prices[symbol] = {}
+            self.historical_prices[symbol]['candles'] = historical_prices_response['candles']
+
+            for candle in historical_prices_response['candles']:
+
+                new_price_mini_dict = {}
+                new_price_mini_dict['symbol'] = symbol
+                new_price_mini_dict['open'] = candle['open']
+                new_price_mini_dict['close'] = candle['close']
+                new_price_mini_dict['high'] = candle['high']
+                new_price_mini_dict['low'] = candle['low']
+                new_price_mini_dict['volume'] = candle['volume']
+                new_price_mini_dict['datetime'] = candle['datetime']
+                new_prices.append(new_price_mini_dict)
+        
+        self.historical_prices['aggregated']  = new_prices
+
+        return self.historical_prices
+
+    def create_stock_frame(self, data: List[dict]) -> StockFrame:
+        
+        self.stock_frame = StockFrame(data=data)
+        
+        return self.stock_frame
+
+
