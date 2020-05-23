@@ -246,15 +246,14 @@ class Portfolio():
         bool -- Specifies whether the position is profitable or flat (True) or not
             profitable (False).
         """
+
+        # Grab the purchase price.
+        purchase_price = self.positions[symbol]['purchase_price']
         
-        if symbol in self.positions and self.positions[symbol]['purchase_price'] < current_price:
+        if (symbol in self.positions and purchase_price <= current_price):
             return True
-        elif symbol in self.positions and self.positions[symbol]['purchase_price'] > current_price:
+        elif (symbol in self.positions and purchase_price > current_price):
             return False
-        elif symbol in self.positions and self.positions[symbol]['purchase_price'] == current_price:
-            return True
-        else:
-            return None
 
     def projected_market_value(self):
         pass

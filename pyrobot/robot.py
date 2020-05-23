@@ -191,7 +191,6 @@ class PyRobot():
         Returns:
         ----
         Portfolio -- A pyrobot.Portfolio object with no positions.
-
         """  
 
         # Initalize the portfolio.
@@ -283,7 +282,7 @@ class PyRobot():
 
         return trade
 
-    def delete_trade(self):
+    def _delete_trade(self):
         pass
 
     def grab_current_quotes(self) -> dict:
@@ -432,7 +431,18 @@ class PyRobot():
         return self.historical_prices
 
     def create_stock_frame(self, data: List[dict]) -> StockFrame:
-        
+        """Generates a new StockFrame Object.
+
+        Arguments:
+        ----
+        data {List[dict]} -- The data to add to the StockFrame object.
+
+        Returns:
+        ----
+        StockFrame -- A multi-index pandas data frame built for trading.
+        """
+
+        # Create the Frame.
         self.stock_frame = StockFrame(data=data)
         
         return self.stock_frame

@@ -132,3 +132,6 @@ indicator_client.sma(period=200)
 
 # Add the 50 day exponentials moving average.
 indicator_client.ema(period=50)
+
+# print the frame.
+print(stock_frame.frame)

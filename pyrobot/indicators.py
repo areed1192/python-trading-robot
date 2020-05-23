@@ -9,6 +9,11 @@ from pyrobot.stock_frame import StockFrame
 
 
 class Indicators():
+
+    """
+    Represents an Indicator Object which can be used
+    to easily add technical indicators to a StockFrame.
+    """    
     
 
     def __init__(self, price_data_frame: StockFrame) -> None:
@@ -40,18 +45,35 @@ class Indicators():
 
     @property
     def price_data_frame(self) -> pd.DataFrame:
+        """Return the raw Pandas Dataframe Object.
+
+        Returns:
+        ----
+        pd.DataFrame -- A multi-index data frame.
+        """
+
         return self._price_data_frame.frame
 
     @price_data_frame.setter
-    def price_data_frame(self, price_data_frame):
+    def price_data_frame(self, price_data_frame: pd.DataFrame) -> None:
+        """Sets the price data frame.
+
+        Arguments:
+        ----
+        price_data_frame {pd.DataFrame} -- A multi-index data frame.
+        """
+
         self._price_data_frame = price_data_frame
 
-    @price_data_frame.deleter
-    def price_data_frame(self):
-        del self._price_data_frame
-
     @property
-    def is_multi_index(self):
+    def is_multi_index(self) -> bool:
+        """Specifies whether the data frame is a multi-index dataframe.
+
+        Returns:
+        ----
+        {bool} -- `True` if the data frame is a `pd.MultiIndex` object. `False` otherwise.
+        """
+            
         if isinstance(self._price_data_frame.frame.index, pd.MultiIndex):
             return True
         else:
@@ -163,7 +185,6 @@ class Indicators():
             >>> price_data_frame = pd.DataFrame(data=historical_prices)
             >>> indicator_client = Indicators(price_data_frame=price_data_frame)
             >>> indicator_client.sma(period=100)
-            >>> price_data_frame = inidcator_client.price_data_frame
         """
         
         # Grab the Price Frame.
@@ -195,8 +216,7 @@ class Indicators():
             )
             >>> price_data_frame = pd.DataFrame(data=historical_prices)
             >>> indicator_client = Indicators(price_data_frame=price_data_frame)
-            >>> indicator_client.ema(period=50)
-            >>> price_data_frame = inidcator_client.price_data_frame
+            >>> indicator_client.ema(period=50, alpha=1/50)
         """
 
         # Grab the Price Frame.
