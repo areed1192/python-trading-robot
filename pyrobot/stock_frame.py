@@ -114,3 +114,36 @@ class StockFrame():
         price_df = price_df.set_index(keys=['symbol','datetime'])
 
         return price_df
+
+    def add_rows(self, data: Dict) -> None:
+
+        column_names = ['open', 'close', 'high', 'low', 'volume']
+
+        for symbol in data:
+
+            # Parse the Timestamp.
+            time_stamp = pd.to_datetime(
+                data[symbol]['quoteTimeInLong'],
+                unit='ms',
+                origin='unix'
+            )
+
+            # Define the Index Tuple.
+            row_id = (symbol, time_stamp)
+
+            # Define the values.
+            row_values = [
+                data[symbol]['openPrice'],
+                data[symbol]['closePrice'],
+                data[symbol]['highPrice'],
+                data[symbol]['lowPrice'],
+                data[symbol]['askSize'] + data[symbol]['bidSize']
+            ]
+
+            # Create a new row.
+            new_row  = pd.Series(data=row_values)
+            
+            # Add the row.
+            self.frame.loc[row_id, column_names] = new_row.values
+
+            self.frame.sort_index(inplace=True)       

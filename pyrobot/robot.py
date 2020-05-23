@@ -104,7 +104,6 @@ class PyRobot():
         else:
             return False
 
-
     @property
     def post_market_open(self):
         """Checks if post-market is open.

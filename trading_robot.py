@@ -1,4 +1,5 @@
 
+import time as time_lib
 import pprint
 import pathlib
 import pandas as pd
@@ -6,6 +7,7 @@ import pandas as pd
 from datetime import datetime
 from datetime import timedelta
 from configparser import ConfigParser
+
 from pyrobot.robot import PyRobot
 from pyrobot.indicators import Indicators
 
@@ -135,3 +137,22 @@ indicator_client.ema(period=50)
 
 # print the frame.
 print(stock_frame.frame)
+
+keep_trading = True
+
+while keep_trading:
+    
+    # Grab a new quote.
+    current_quotes = trading_robot.grab_current_quotes()
+
+    # Add to the Stock Frame.
+    stock_frame.add_rows(data=current_quotes)
+
+    print(stock_frame.frame)
+
+    # Refresh the Indicators.
+    indicator_client.refresh()
+
+    time_lib.sleep(5)
+
+

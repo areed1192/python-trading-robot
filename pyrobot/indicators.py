@@ -39,6 +39,7 @@ class Indicators():
 
         self._price_data_frame: StockFrame = price_data_frame
         self._price_groups = self._price_data_frame.symbol_groups
+        self._current_indicators = {}
         
         if self.is_multi_index:
             True
@@ -73,7 +74,7 @@ class Indicators():
         ----
         {bool} -- `True` if the data frame is a `pd.MultiIndex` object. `False` otherwise.
         """
-            
+
         if isinstance(self._price_data_frame.frame.index, pd.MultiIndex):
             return True
         else:
@@ -85,7 +86,15 @@ class Indicators():
         Returns:
         ----
         pd.DataFrame -- A data frame with the Change in Price.
-        """        
+        """
+
+        locals_data = locals()
+        del locals_data['self']
+
+        self._current_indicators['change_in_price'] = {}
+        self._current_indicators['change_in_price']['args'] = locals_data
+        self._current_indicators['change_in_price']['func'] = self.change_in_price
+
 
         self._price_data_frame.frame['change_in_price'] = self._price_data_frame.frame.groupby(
             by='symbol',
@@ -123,6 +132,13 @@ class Indicators():
             >>> price_data_frame = inidcator_client.price_data_frame
         """
 
+        locals_data = locals()
+        del locals_data['self']
+
+        self._current_indicators['rsi'] = {}
+        self._current_indicators['rsi']['args'] = locals_data
+        self._current_indicators['rsi']['func'] = self.rsi
+
         # Define the price data frame.
         price_frame = self._price_data_frame.frame
 
@@ -158,9 +174,6 @@ class Indicators():
         # Clean up before sending back.
         price_frame.drop(labels=['ewma_up', 'ewma_down', 'down_day', 'up_day', 'change_in_price'], axis=1, inplace=True)
 
-        # Reassign?
-        # self.price_data_frame(price_frame)
-
         return price_frame
 
     def sma(self, period: int) -> pd.DataFrame:
@@ -186,12 +199,21 @@ class Indicators():
             >>> indicator_client = Indicators(price_data_frame=price_data_frame)
             >>> indicator_client.sma(period=100)
         """
-        
+
+        locals_data = locals()
+        del locals_data['self']
+
+        self._current_indicators['sma'] = {}
+        self._current_indicators['sma']['args'] = locals_data
+        self._current_indicators['sma']['func'] = self.sma
+
         # Grab the Price Frame.
         price_frame = self._price_data_frame.frame
 
         # Add the SMA
-        price_frame['sma'] = price_frame.groupby('symbol')['close'].transform(lambda x: x.rolling(window=period).mean())
+        price_frame['sma'] = price_frame.groupby('symbol', sort=True)['close'].transform(
+            lambda x: x.rolling(window=period).mean()
+        )
 
         return price_frame
 
@@ -219,6 +241,13 @@ class Indicators():
             >>> indicator_client.ema(period=50, alpha=1/50)
         """
 
+        locals_data = locals()
+        del locals_data['self']
+
+        self._current_indicators['ema'] = {}
+        self._current_indicators['ema']['args'] = locals_data
+        self._current_indicators['ema']['func'] = self.ema
+
         # Grab the Price Frame.
         price_frame = self._price_data_frame.frame
 
@@ -228,3 +257,22 @@ class Indicators():
         )
 
         return price_frame
+
+    def refresh(self):
+        """Updates the Indicator columns after adding the new rows."""        
+
+        # Grab all the details of the indicators so far.
+        for indicator in self._current_indicators:
+            
+            # Grab the function.
+            indicator_argument = self._current_indicators[indicator]['args']
+
+            # Grab the arguments.
+            indicator_function = self._current_indicators[indicator]['func']
+
+            # Update the function.
+            indicator_function(**indicator_argument)
+
+            print(indicator_argument)
+            print(indicator_function)
+
