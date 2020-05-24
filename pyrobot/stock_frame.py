@@ -1,5 +1,6 @@
 import pandas as pd
 from pandas.core.groupby import DataFrameGroupBy
+from pandas.core.window import RollingGroupby
 from pandas.core.window import Window
 
 from datetime import datetime
@@ -24,6 +25,8 @@ class StockFrame():
         
         self._data = data
         self._frame: pd.DataFrame = self.create_frame()
+        self._symbol_groups = None
+        self._symbol_rolling_groups = None
 
     @property
     def frame(self) -> pd.DataFrame:
@@ -47,12 +50,12 @@ class StockFrame():
 
         Returns:
         ----
-        DataFrameGroupBy -- A GroupBy Data Frame with each symbol.
+        {DataFrameGroupBy} -- A `pandas.core.groupby.GroupBy` object with each symbol.
         """        
         self._symbol_groups: DataFrameGroupBy = self._frame.groupby(by='symbol')
         return self._symbol_groups
 
-    def symbol_groups_windows(self, size: int) -> Window:
+    def symbol_rolling_groups(self, size: int) -> RollingGroupby:
         """Grabs the windows for each group.
 
         Arguments:
@@ -61,10 +64,16 @@ class StockFrame():
 
         Returns:
         ----
-        Window -- A Pandas.Window object.
-        """        
-        self._symbol_groups_windows: Window = self._symbol_groups.rolling(size)
-        return self._symbol_groups_windows
+        {RollingGroupby} -- A `pandas.core.window.RollingGroupby` object.
+        """
+
+        # If we don't a symbols group, then create it.
+        if not self._symbol_groups:
+            self.symbol_groups
+
+        self._symbol_rolling_groups: RollingGroupby = self._symbol_groups.rolling(size)
+        
+        return self._symbol_rolling_groups
 
 
     def create_frame(self) -> pd.DataFrame:
@@ -124,7 +133,7 @@ class StockFrame():
 
         Usage:
         ----
-        
+
         """        
 
         column_names = ['open', 'close', 'high', 'low', 'volume']

@@ -1,25 +1,23 @@
-"""Unit test module for the Azure Session.
+"""Unit test module for the PyRobot Object.
 
-Will perform an instanc test to make sure it creates it.
+Will perform an instance test to make sure it creates it. Additionally,
+it will test different properties and methods of the object.
 """
 
-import os
-import sys
-import pyodbc
 import unittest
+from unittest import TestCase
 from datetime import datetime
 from datetime import timezone
-from unittest import TestCase
+from datetime import timedelta
 from configparser import ConfigParser
 
 from pyrobot.robot import PyRobot
 from pyrobot.portfolio import Portfolio
-from configparser import ConfigParser
 
 
-class PyRobotSession(TestCase):
+class PyRobotTest(TestCase):
 
-    """Will perform a unit test for the Azure session."""
+    """Will perform a unit test for the PyRobot Object."""
 
     def setUp(self) -> None:
         """Set up the Robot."""
@@ -48,7 +46,9 @@ class PyRobotSession(TestCase):
         """Call `create_portfolio` and make sure it's a Portfolio."""
 
         new_portfolio = self.robot.create_portfolio()
+
         self.assertIsInstance(new_portfolio, Portfolio)
+
 
     def test_regular_market_open(self):
         """Tests whether Market is Open"""
@@ -105,6 +105,24 @@ class PyRobotSession(TestCase):
             open = False
 
         self.assertEqual(open, self.robot.post_market_open)
+
+    def test_historical_prices(self):
+        """Tests Grabbing historical prices."""
+
+        # Grab historical prices, first define the start date and end date.
+        start_date = datetime.today()
+        end_date = start_date - timedelta(days=30)
+
+        # Grab the historical prices.
+        self.robot.grab_historical_prices(
+            start=end_date,
+            end=start_date,
+            bar_size=1,
+            bar_type='minute',
+            symbols=['AAPL']
+        )
+
+        self.assertIn('aggregated', self.robot.historical_prices)
 
     def tearDown(self) -> None:
         """Teardown the Robot."""

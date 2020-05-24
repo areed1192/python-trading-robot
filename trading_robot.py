@@ -153,6 +153,7 @@ while keep_trading:
     # Refresh the Indicators.
     indicator_client.refresh()
 
+    # Sleep 5 seconds.
     time_lib.sleep(5)
 
 

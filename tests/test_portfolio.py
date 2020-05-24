@@ -1,26 +1,22 @@
-"""Unit test module for the Azure Session.
+"""Unit test module for the Portfolio Object.
 
-Will perform an instanc test to make sure it creates it.
+Will perform an instance test to make sure it creates it. Additionally,
+it will test different properties and methods of the object.
 """
 
-import os
-import sys
-import pyodbc
 import unittest
 from unittest import TestCase
 from configparser import ConfigParser
 
-from pyrobot.robot import PyRobot
 from pyrobot.portfolio import Portfolio
-from configparser import ConfigParser
 
 
-class PyRobotSession(TestCase):
+class PyRobotPortfolioTest(TestCase):
 
-    """Will perform a unit test for the Azure session."""
+    """Will perform a unit test for the Portfolio object."""
 
     def setUp(self) -> None:
-        """Set up the Robot."""
+        """Set up the Portfolio."""
 
         self.portfolio = Portfolio()
 
@@ -71,7 +67,7 @@ class PyRobotSession(TestCase):
     def test_delete_existing_position(self):
         """Test deleting an exisiting position."""
 
-        new_position = self.portfolio.add_position(
+        self.portfolio.add_position(
             symbol='MSFT',
             asset_type='equity',
             quantity=10,
@@ -95,7 +91,7 @@ class PyRobotSession(TestCase):
     def test_in_portfolio_exisitng(self):
         """Checks to see if an exisiting position exists."""
 
-        new_position = self.portfolio.add_position(
+        self.portfolio.add_position(
             symbol='MSFT',
             asset_type='equity',
             quantity=10,
@@ -113,9 +109,9 @@ class PyRobotSession(TestCase):
         self.assertFalse(in_portfolio_flag)
 
     def tearDown(self) -> None:
-        """Teardown the Robot."""
+        """Teardown the Portfolio object."""
 
-        self.robot = None
+        self.portfolio = None
 
 
 if __name__ == '__main__':

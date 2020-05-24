@@ -1,29 +1,23 @@
-"""Unit test module for the Azure Session.
+"""Unit test module for the Trade Object.
 
-Will perform an instanc test to make sure it creates it.
+Will perform an instance test to make sure it creates it. Additionally,
+it will test different properties and methods of the object.
 """
 
-import os
-import sys
-import pyodbc
 import unittest
-from datetime import datetime
-from datetime import timezone
 from unittest import TestCase
 from configparser import ConfigParser
 
 from pyrobot.robot import PyRobot
-from pyrobot.portfolio import Portfolio
 from pyrobot.trades import Trade
-from configparser import ConfigParser
 
 
-class PyRobotSession(TestCase):
+class PyRobotTradeTest(TestCase):
 
-    """Will perform a unit test for the Azure session."""
+    """Will perform a unit test for the Trade object."""
 
     def setUp(self) -> None:
-        """Set up the Robot."""
+        """Set up the Trade Object."""
 
         # Grab configuration values.
         config = ConfigParser()
@@ -34,6 +28,7 @@ class PyRobotSession(TestCase):
         CREDENTIALS_PATH = config.get('main', 'JSON_PATH')
         self.ACCOUNT_NUMBER = config.get('main', 'ACCOUNT_NUMBER')
 
+        # Create a new instance of a robot.
         self.robot = PyRobot(
             client_id = CLIENT_ID, 
             redirect_uri = REDIRECT_URI, 
@@ -102,7 +97,11 @@ class PyRobotSession(TestCase):
             order_type='lmt',
             price=12.00
         )
+
+        # Add a new instrument.
         new_trade.instrument(symbol='MSFT',quantity=2, asset_type='EQUITY')
+
+        # Add a new percentage Stop Loss.
         new_trade.add_stop_loss(stop_size=.10, percentage=True)
 
         stop_loss_order = {
@@ -137,7 +136,11 @@ class PyRobotSession(TestCase):
             order_type='lmt',
             price=12.00
         )
+
+        # Add a new instrument.
         new_trade.instrument(symbol='MSFT',quantity=2, asset_type='EQUITY')
+
+        # Add a new stop Loss.
         new_trade.add_stop_loss(stop_size=.10, percentage=False)
 
         stop_loss_order = {
@@ -171,7 +174,6 @@ class PyRobotSession(TestCase):
         """Teardown the Robot."""
 
         self.robot = None
-
 
 if __name__ == '__main__':
     unittest.main()

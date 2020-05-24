@@ -279,10 +279,34 @@ class PyRobot():
             stop_limit_price=stop_limit_price
         )
 
+        self.trades[1] = trade
+
         return trade
 
-    def _delete_trade(self):
-        pass
+    def delete_trade(self, index: int) -> None:
+        """Deletes an exisiting trade from the `trades` collection.
+
+        Arguments:
+        ----
+        index {int} -- The index of the order.
+
+        Usage:
+        ----
+            >>> trading_robot = PyRobot(
+                client_id=CLIENT_ID, 
+                redirect_uri=REDIRECT_URI, 
+                credentials_path=CREDENTIALS_PATH
+            )
+            >>> new_trade = trading_robot_portfolio.create_trade(
+                enter_or_exit='enter',
+                long_or_short='long',
+                order_type='mkt'
+            )
+            >>> trading_robot.delete_trade(index=1)
+        """        
+        
+        if index in self.trades:
+            del self.trades[index]
 
     def grab_current_quotes(self) -> dict:
         """Grabs the current quotes for all positions in the portfolio.
@@ -364,7 +388,8 @@ class PyRobot():
 
         return quotes
 
-    def grab_historical_prices(self, start: datetime, end: datetime, bar_size: int = 1, bar_type: str = 'minute', data_frame: bool = False) -> Union[List[Dict], pd.DataFrame]:
+    def grab_historical_prices(self, start: datetime, end: datetime, bar_size: int = 1, 
+                               bar_type: str = 'minute', symbols: List[str] = None) -> Union[List[Dict], pd.DataFrame]:
         """Grabs the historical prices for all the postions in a portfolio.
 
         Overview:
@@ -384,6 +409,8 @@ class PyRobot():
         
         bar_type {str} -- Defines the bar type, can be one of the following:
             `['minute', 'week', 'month', 'year']` (default: {'minute'})
+        
+        symbols {List[str]} -- A list of ticker symbols to pull. (default: None)
 
         Returns:
         ----
@@ -398,7 +425,10 @@ class PyRobot():
 
         new_prices = []
 
-        for symbol in self.portfolio.positions:
+        if not symbols:
+            symbols = self.portfolio.positions
+
+        for symbol in symbols:
 
             historical_prices_response = self.session.get_price_history(
                 symbol=symbol,
