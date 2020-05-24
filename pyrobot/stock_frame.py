@@ -116,6 +116,16 @@ class StockFrame():
         return price_df
 
     def add_rows(self, data: Dict) -> None:
+        """Adds a new row to our StockFrame.
+
+        Arguments:
+        ----
+        data {Dict} -- A list of quotes.
+
+        Usage:
+        ----
+        
+        """        
 
         column_names = ['open', 'close', 'high', 'low', 'volume']
 
