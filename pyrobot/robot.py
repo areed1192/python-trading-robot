@@ -1,23 +1,24 @@
 import pandas as pd
 
-from td.client import TDClient
-from td.utils import milliseconds_since_epoch
-
-from datetime import datetime
 from datetime import time
+from datetime import datetime
 from datetime import timezone
-
-from pyrobot.portfolio import Portfolio
-from pyrobot.trades import Trade
-from pyrobot.stock_frame import StockFrame
 
 from typing import List
 from typing import Dict
 from typing import Union
+from typing import Optional
+
+from pyrobot.trades import Trade
+from pyrobot.portfolio import Portfolio
+from pyrobot.stock_frame import StockFrame
+
+from td.client import TDClient
+from td.utils import milliseconds_since_epoch
 
 class PyRobot():
 
-    def __init__(self, client_id: str, redirect_uri: str, credentials_path: str = None, trading_account: str = None) -> None:
+    def __init__(self, client_id: str, redirect_uri: str, credentials_path: Optional[str] = None, trading_account: Optional[str] = None) -> None:
         """Initalizes a new instance of the robot and logs into the API platform specified.
         
         Arguments:
@@ -38,14 +39,14 @@ class PyRobot():
         """
 
         # Set the attirbutes
-        self.trading_account: str = trading_account
-        self.client_id: str = client_id
-        self.redirect_uri: str = redirect_uri
-        self.credentials_path: str = credentials_path
+        self.trading_account = trading_account
+        self.client_id = client_id
+        self.redirect_uri = redirect_uri
+        self.credentials_path = credentials_path
         self.session: TDClient = self._create_session()
-        self.trades: dict = {}
-        self.historical_prices: dict = {}
-        self.stock_frame = None
+        self.trades = {}
+        self.historical_prices = {}
+        self.stock_frame: StockFrame = None
 
     def _create_session(self) -> TDClient:
         """Start a new session.
@@ -197,7 +198,7 @@ class PyRobot():
 
         return self.portfolio
 
-    def create_trade(self, enter_or_exit: str, long_or_short: str, order_type: str = 'mkt', price: float = 0.0, stop_limit_price = 0.0) -> Trade:
+    def create_trade(self, trade_id: str, enter_or_exit: str, long_or_short: str, order_type: str = 'mkt', price: float = 0.0, stop_limit_price = 0.0) -> Trade:
         """Initalizes a new instance of a Trade Object.
 
         This helps simplify the process of building an order by using pre-built templates that can be
@@ -205,6 +206,8 @@ class PyRobot():
 
         Arguments:
         ----
+        trade_id {str} -- The ID associated with the trade, this can then be used to access the trade during runtime.
+
         enter_or_exit {str} -- Defines whether this trade will be used to enter or exit a position.
             If used to enter, specify `enter`. If used to exit, speicfy `exit`.
 
@@ -231,6 +234,7 @@ class PyRobot():
                 credentials_path=CREDENTIALS_PATH
             )
             >>> new_trade = trading_robot_portfolio.create_trade(
+                trade_id='long_1',
                 enter_or_exit='enter',
                 long_or_short='long',
                 order_type='mkt'
@@ -238,6 +242,7 @@ class PyRobot():
             >>> new_trade
 
             >>> new_market_trade = trading_robot_portfolio.create_trade(
+                trade_id='long_2',
                 enter_or_exit='enter',
                 long_or_short='long',
                 order_type='mkt',
@@ -246,6 +251,7 @@ class PyRobot():
             >>> new_market_trade
 
             >>> new_stop_trade = trading_robot_portfolio.create_trade(
+                trade_id='long_3',
                 enter_or_exit='enter',
                 long_or_short='long',
                 order_type='stop',
@@ -254,6 +260,7 @@ class PyRobot():
             >>> new_stop_trade
 
             >>> new_stop_limit_trade = trading_robot_portfolio.create_trade(
+                trade_id='long_4',
                 enter_or_exit='enter',
                 long_or_short='long',
                 order_type='stop-lmt',
@@ -279,7 +286,7 @@ class PyRobot():
             stop_limit_price=stop_limit_price
         )
 
-        self.trades[1] = trade
+        self.trades[trade_id] = trade
 
         return trade
 
@@ -475,5 +482,8 @@ class PyRobot():
         self.stock_frame = StockFrame(data=data)
         
         return self.stock_frame
+    
+    def execute_signals(self):
+        pass
 
 

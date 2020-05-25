@@ -2,6 +2,7 @@
 import time as time_lib
 import pprint
 import pathlib
+import operator
 import pandas as pd
 
 from datetime import datetime
@@ -85,8 +86,26 @@ elif trading_robot.pre_market_open:
 # Print the Positions
 pprint.pprint(trading_robot_portfolio.positions)
 
+# Grab the current quotes, for all of our positions.
+current_quotes = trading_robot.grab_current_quotes()
+
+# Print the Quotes.
+pprint.pprint(current_quotes)
+
+# Let's see if our Microsoft Position is profitable.
+is_msft_porfitable = trading_robot.portfolio.is_profitable(
+    symbol="MSFT",
+    current_price=current_quotes['MSFT']['lastPrice']
+)
+print("Is Microsoft Profitable: {answer}".format(answer=is_msft_porfitable))
+
+# Let's get the projected Market Value.
+portfolio_summary = trading_robot.portfolio.projected_market_value(current_prices=current_quotes)
+pprint.pprint(portfolio_summary)
+
 # Create a new Trade Object.
 new_trade = trading_robot.create_trade(
+    trade_id='long_msft',
     enter_or_exit='enter',
     long_or_short='short',
     order_type='lmt',
@@ -135,6 +154,15 @@ indicator_client.sma(period=200)
 # Add the 50 day exponentials moving average.
 indicator_client.ema(period=50)
 
+# Add a signal to check for.
+indicator_client.set_indicator_signal(
+    indicator='rsi',
+    buy=40.0,
+    sell=20.0,
+    condition_buy=operator.ge,
+    condition_sell=operator.le
+)
+
 # print the frame.
 print(stock_frame.frame)
 
@@ -153,7 +181,11 @@ while keep_trading:
     # Refresh the Indicators.
     indicator_client.refresh()
 
+    # Check for signals.
+    signals = indicator_client.check_signals()
+
+    # Execute Trades.
+    trading_robot.execute_signals()
+
     # Sleep 5 seconds.
     time_lib.sleep(5)
-
-

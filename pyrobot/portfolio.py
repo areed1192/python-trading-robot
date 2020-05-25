@@ -5,7 +5,7 @@ from typing import Iterable
 
 class Portfolio():
 
-    def __init__(self, account_number: Optional[str]) -> None:
+    def __init__(self, account_number: Optional[str] = None) -> None:
         """Initalizes a new instance of the Portfolio object.
         
         Keyword Arguments:
@@ -30,6 +30,10 @@ class Portfolio():
         Arguments:
         ----
         positions {list[dict]} -- Multiple positions with the required arguments to be added.
+
+        Returns:
+        ----
+        {dict} -- The current positions in the portfolio.
 
         Usage:
         ----
@@ -67,10 +71,6 @@ class Portfolio():
                     'symbol': 'TSLA'
                 }
             }
-
-        Returns:
-        ----
-        dict -- A dictionary containing multiple positions.
         """
         
         if isinstance(positions, list):
@@ -92,7 +92,7 @@ class Portfolio():
         else:
             raise TypeError('Positions must be a list of dictionaries.')
 
-    def add_position(self, symbol: str, asset_type: str, purchase_date: Optional[str], quantity: int = 0, purchase_price: float = 0.0) -> dict:
+    def add_position(self, symbol: str, asset_type: str, purchase_date: Optional[str] = None, quantity: int = 0, purchase_price: float = 0.0) -> dict:
         """Adds a single new position to the the portfolio.
         
         Arguments:
@@ -111,6 +111,10 @@ class Portfolio():
         purchase_date {str} -- The date which the asset was purchased. Must be ISO Format "YYYY-MM-DD"
             For example, "2020-04-01" (default: {None})
 
+        Returns:
+        ----
+        {dict} -- A dictionary object that represents a position in the portfolio.
+
         Usage:
         ----
             >>> portfolio = Portfolio()
@@ -118,7 +122,8 @@ class Portfolio():
                     asset_type='equity', 
                     quantity=2, 
                     purchase_price=4.00,
-                    purchase_date="2020-01-31")
+                    purchase_date="2020-01-31"
+                )
             >>> new_position
             {
                 'asset_type': 'equity', 
@@ -126,11 +131,7 @@ class Portfolio():
                 'purchase_price': 4.00,
                 'symbol': 'MSFT',
                 'purchase_date': '2020-01-31'
-            }           
-        
-        Returns:
-        ----
-        dict -- A dictionary object that represents a position in the portfolio.
+            }
         """
         
         self.positions[symbol] = {}
@@ -148,17 +149,23 @@ class Portfolio():
         Arguments:
         ----
         symbol {str} -- The symbol of the instrument to be deleted. Example: 'AAPL' or '/ES'
-        
+
+        Returns:
+        ----
+        {Tuple[bool, str]} -- Returns `True` if successfully deleted, `False` otherwise 
+            along with a message.
+
         Usage:
         ----
             >>> portfolio = Portfolio()
 
-            >>> new_position = Portfolio.add_position(symbol='MSFT', 
+            >>> new_position = Portfolio.add_position(
+                    symbol='MSFT', 
                     asset_type='equity', 
                     quantity=2, 
                     purchase_price=4.00,
-                    purchase_date="2020-01-31")
-
+                    purchase_date="2020-01-31"
+                )
             >>> delete_status = Portfolio.delete_position(symbol='MSFT')
             >>> delete_status
             (True, 'MSFT was successfully removed.')
@@ -166,10 +173,6 @@ class Portfolio():
             >>> delete_status = Portfolio.delete_position(symbol='AAPL')
             >>> delete_status
             (False, 'AAPL did not exist in the porfolio.')
-
-        Returns:
-        ----
-        Tuple[bool, str] -- Returns True if successfully deleted, False otherwise along with a message.
         """
         
         if symbol in self.positions:
@@ -178,7 +181,9 @@ class Portfolio():
         else:
             return (False, "{symbol} did not exist in the porfolio.".format(symbol=symbol))
 
-    def total_allocation(self):
+    def total_allocation(self) -> dict:
+        """Returns a summary of the portfolio by asset allocation.
+        """        
 
         total_allocation = {
             'stocks':[],
@@ -190,7 +195,7 @@ class Portfolio():
         
         if len(self.positions.keys()) > 0:
             for symbol in self.positions:
-                total_allocation[self.positions[symbol]['asset_type']]
+                total_allocation[self.positions[symbol]['asset_type']].append(self.positions[symbol])
 
     def risk_exposure(self):
         pass
@@ -204,7 +209,11 @@ class Portfolio():
         Arguments:
         ----
         symbol {str} -- The symbol of the instrument to be deleted. Example: 'AAPL' or '/ES'
-        
+
+        Returns:
+        ----
+        bool -- `True` if the position is in the portfolio, `False` otherwise.
+
         Usage:
         ----
             >>> portfolio = Portfolio()
@@ -215,10 +224,6 @@ class Portfolio():
             >>> in_position_flag = Portfolio.in_portfolio(symbol='MSFT')
             >>> in_position_flag
             True
-
-        Returns:
-        ----
-        bool -- `True` if the position is in the portfolio, `False` otherwise.
         """
 
         if symbol in self.positions:
@@ -226,7 +231,7 @@ class Portfolio():
         else:
             return False
 
-    def is_porfitable(self, symbol: str, current_price: float) -> bool:
+    def is_profitable(self, symbol: str, current_price: float) -> bool:
         """Specifies whether a position is profitable.
         
         Arguments:
@@ -234,26 +239,122 @@ class Portfolio():
         symbol {str} -- The symbol of the instrument, to check profitability.
 
         current_price {float} -- The current trading price of the instrument.
-
-        Usage:
-        ----
-
         
         Returns:
         ----
-        bool -- Specifies whether the position is profitable or flat (True) or not
-            profitable (False).
+        {bool} -- Specifies whether the position is profitable or flat `True` or not
+            profitable `False`.
+        
+        Raises:
+        ----
+        KeyError: If the Symbol does not exist it will return a key error.
+        
+        Usage:
+        ----
+            >>> portfolio = Portfolio()
+            >>> new_position = Portfolio.add_position(
+                symbol='MSFT', 
+                asset_type='equity',
+                purchase_price=4.00,
+                purchase_date="2020-01-31"
+            )
+            >>> is_profitable_flag = Portfolio.is_profitable(
+                symbol='MSFT',
+                current_price=7.00
+            )
+            >>> is_profitable_flag
+            True
         """
 
-        # Grab the purchase price.
-        purchase_price = self.positions[symbol]['purchase_price']
+        # Grab the purchase price, if it exists.
+        if self.in_portfolio(symbol=symbol):
+            purchase_price = self.positions[symbol]['purchase_price']
+        else:
+            raise KeyError("The Symbol you tried to request does not exist.")
         
-        if (symbol in self.positions and purchase_price <= current_price):
+        if (purchase_price <= current_price):
             return True
-        elif (symbol in self.positions and purchase_price > current_price):
+        elif (purchase_price > current_price):
             return False
 
-    def projected_market_value(self):
-        pass
+    def projected_market_value(self, current_prices: dict) -> dict:
+        """Returns the Projected market value for all the positions in the portfolio.
+
+        Arguments:
+        ----
+        current_prices {dict} -- A dictionary of current quotes for each of the symbols
+            in the portfolio.
+
+        Returns:
+        ----
+        dict -- A summarized version of the portfolio with each position, purchase price, current price,
+            and projected values.
+        
+        Usage:
+        ----
+            >>> portfolio = Portfolio()
+            >>> new_position = portfolio.add_position(
+                symbol='MSFT', 
+                asset_type='equity',
+                purchase_price=4.00,
+                purchase_date="2020-01-31"
+            )
+            >>> portfolio_summary = portfolio.projected_market_value(current_prices={'MSFT':{'lastPrice': 8.00, 'openPrice': 7.50}})        
+        """
+
+        projected_value = {}
+        total_value = 0.0
+        total_invested_capital = 0.0
+        total_profit_or_loss = 0.0
+
+        position_count_profitable = 0
+        position_count_not_profitable = 0
+        position_count_break_even = 0
+        
+        for symbol in current_prices:
+
+            if self.in_portfolio(symbol=symbol):
+
+                projected_value[symbol] = {}
+                current_quantity = self.positions[symbol]['quantity']
+                purchase_price = self.positions[symbol]['purchase_price']
+                current_price = current_prices[symbol]['lastPrice']
+                is_profitable = self.is_profitable(symbol=symbol, current_price=current_price)
+
+                projected_value[symbol]['purchase_price'] = purchase_price
+                projected_value[symbol]['current_price'] = current_prices[symbol]['lastPrice']
+                projected_value[symbol]['quantity'] = current_quantity
+                projected_value[symbol]['is_profitable'] = is_profitable
+                projected_value[symbol]['total_market_value'] = (current_price * current_quantity)
+                projected_value[symbol]['total_invested_capital'] = (current_quantity * purchase_price)
+                projected_value[symbol]['total_loss_or_gain_$'] = (current_price - purchase_price) * current_quantity
+                projected_value[symbol]['total_loss_or_gain_%'] = round(((current_price - purchase_price) / purchase_price),4)
+
+                total_value += projected_value[symbol]['total_market_value']
+                total_profit_or_loss += projected_value[symbol]['total_loss_or_gain_$']
+                total_invested_capital += projected_value[symbol]['total_invested_capital']
+
+                if projected_value[symbol]['total_loss_or_gain_$'] > 0:
+                    position_count_profitable += 1
+                elif projected_value[symbol]['total_loss_or_gain_$'] < 0:
+                    position_count_not_profitable += 1
+                else:
+                    position_count_break_even += 1
+
+        projected_value['total_positions'] = len(self.positions)
+        projected_value['total_market_value'] = total_value
+        projected_value['total_invested_capital'] = total_invested_capital
+        projected_value['total_profit_or_loss'] = total_profit_or_loss
+        projected_value['number_of_profitable_positions'] = position_count_profitable
+        projected_value['number_of_non_profitable_positions'] = position_count_not_profitable
+        projected_value['number_of_breakeven_positions'] = position_count_break_even
+
+        return projected_value
+
+
+
+
+
+
 
 

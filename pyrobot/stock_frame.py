@@ -177,6 +177,27 @@ class StockFrame():
             self.frame.sort_index(inplace=True)
 
     def do_indicator_exist(self, column_names: List[str]) -> bool:
+        """Checks to see if the indicator columns specified exist.
+        
+        Overview:
+        ----
+        The user can add multiple indicator columns to their StockFrame object
+        and in some cases we will need to modify those columns before making trades.
+        In those situations, this method, will help us check if those columns exist
+        before proceeding on in the code.
+
+        Arguments:
+        ----
+        column_names {List[str]} -- A list of column names that will be checked.
+
+        Raises:
+        ----
+        KeyError: If a column is not found in the StockFrame, a KeyError will be raised.
+
+        Returns:
+        ----
+        bool -- `True` if all the columns exist.
+        """
 
         if set(column_names).issubset(self._frame.columns):
             return True
@@ -185,7 +206,29 @@ class StockFrame():
                 missing_columns=set(column_names).difference(self._frame.columns)
             )) 
 
-    def _check_signals(self, indicators: dict) -> pd.DataFrame:
+    def _check_signals(self, indicators: dict) -> Union[pd.DataFrame, None]:
+        """Returns the last row of the StockFrame if conditions are met.
+
+        Overview:
+        ----
+        Before a trade is executed, we must check to make sure if the
+        conditions that warrant a `buy` or `sell` signal are met. This
+        method will take last row for each symbol in the StockFrame and
+        compare the indicator column values with the conditions specified
+        by the user.
+
+        If the conditions are met the row will be returned back to the user.
+
+        Arguments:
+        ----
+        indicators {dict} -- A dictionary containing all the indicators to be checked
+            along with their buy and sell criteria.
+
+        Returns:
+        ----
+        {Union[pd.DataFrame, None]} -- If signals are generated then, a pandas.DataFrame object
+            will be returned. If no signals are found then nothing will be returned.
+        """        
 
         # Grab the last rows.
         last_rows = self._symbol_groups.tail(1)
@@ -198,17 +241,20 @@ class StockFrame():
             for indicator in indicators:
 
                 column = last_rows[indicator]
+
                 buy_condition_target = indicators[indicator]['buy']
                 sell_condition_target = indicators[indicator]['sell']
 
-                condition_1 = column > buy_condition_target
-                condition_2 = column > sell_condition_target
+                buy_condition_operator = indicators[indicator]['buy_operator']
+                sell_condition_operator = indicators[indicator]['sell_operator']
 
-                conditions.append((condition_1 & condition_2))
+                condition_1: pd.Series = buy_condition_operator(column, buy_condition_target)
+                condition_2: pd.Series = sell_condition_operator(column, sell_condition_target)
 
+                condition_1 = condition_1.where(lambda x : x == True).dropna()
+                condition_2 = condition_2.where(lambda x : x == True).dropna()
 
+                conditions.append(('buys', condition_1))
+                conditions.append(('sells', condition_2))
 
-        print(conditions)
-
-            
-
+        print(conditions)          

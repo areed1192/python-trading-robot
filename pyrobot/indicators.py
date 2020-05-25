@@ -6,6 +6,7 @@ from typing import Any
 from typing import List
 from typing import Dict
 from typing import Tuple
+from typing import Union
 from typing import Optional
 from typing import Iterable
 
@@ -49,8 +50,7 @@ class Indicators():
         if self.is_multi_index:
             True
 
-    @property
-    def indicator_signals(self, indicator: Optional[str]) -> Dict:
+    def get_indicator_signal(self, indicator: Optional[str]) -> Dict:
         """Return the raw Pandas Dataframe Object.
 
         Arguments:
@@ -67,8 +67,8 @@ class Indicators():
         else:      
             return self._indicator_signals
 
-    @indicator_signals.setter
-    def indicator_signals(self, indicator: str, buy: float, sell: float, condition_buy: Any, condition_sell: Any) -> None:
+    
+    def set_indicator_signal(self, indicator: str, buy: float, sell: float, condition_buy: Any, condition_sell: Any) -> None:
         """Return the raw Pandas Dataframe Object.
 
         Arguments:
@@ -93,7 +93,8 @@ class Indicators():
         # Add the signals.
         self._indicator_signals[indicator]['buy'] = buy     
         self._indicator_signals[indicator]['sell'] = sell
-
+        self._indicator_signals[indicator]['buy_operator'] = condition_buy
+        self._indicator_signals[indicator]['sell_operator'] = condition_sell
 
     @property
     def price_data_frame(self) -> pd.DataFrame:
@@ -330,4 +331,17 @@ class Indicators():
 
             print(indicator_argument)
             print(indicator_function)
+
+    def check_signals(self) -> Union[pd.DataFrame, None]:
+        """Checks to see if any signals have been generated.
+
+        Returns:
+        ----
+        {Union[pd.DataFrame, None]} -- If signals are generated then a pandas.DataFrame
+            is returned otherwise nothing is returned.
+        """
+
+        signals_df = self._stock_frame._check_signals(indicators=self._indicator_signals)
+
+        return signals_df
 

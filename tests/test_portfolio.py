@@ -19,6 +19,7 @@ class PyRobotPortfolioTest(TestCase):
         """Set up the Portfolio."""
 
         self.portfolio = Portfolio()
+        self.maxDiff = None
 
     def test_create_portofolio(self):
         """Make sure it's a Portfolio."""
@@ -51,7 +52,7 @@ class PyRobotPortfolioTest(TestCase):
 
         new_position = self.portfolio.add_position(
             symbol='MSFT',
-            asset_type='equity',
+            asset_type='equity'
         )
 
         correct_position = {
@@ -107,6 +108,69 @@ class PyRobotPortfolioTest(TestCase):
 
         in_portfolio_flag = self.portfolio.in_portfolio(symbol='AAPL')
         self.assertFalse(in_portfolio_flag)
+
+    def test_is_profitable(self):
+        """Checks to see if a position is profitable."""
+
+        # Add a position.
+        self.portfolio.add_position(
+            symbol='MSFT',
+            asset_type='equity',
+            quantity=10,
+            purchase_price=3.00,
+            purchase_date='2020-01-31'
+        )
+
+        # Test for being Profitable.
+        is_profitable = self.portfolio.is_profitable(
+            symbol='MSFT',
+            current_price=5.00
+        
+        )
+
+        # Test for not being profitable.
+        is_not_profitable = self.portfolio.is_profitable(
+            symbol='MSFT',
+            current_price=1.00
+        )
+        
+        self.assertTrue(is_profitable)
+        self.assertFalse(is_not_profitable)
+
+    def test_projected_market_value(self):
+        """Tests the generation of a portfolio summary, for all of the positions."""
+
+        # Add a position.
+        self.portfolio.add_position(
+            symbol='MSFT',
+            asset_type='equity',
+            quantity=10,
+            purchase_price=3.00,
+            purchase_date='2020-01-31'
+        )
+
+        correct_dict = {
+            'MSFT': {
+                'current_price': 5.0,
+                'is_profitable': True,
+                'purchase_price': 3.0,
+                'quantity': 10,
+                'total_invested_capital': 30.0,
+                'total_loss_or_gain_$': 20.0,
+                'total_loss_or_gain_%': 0.6667,
+                'total_market_value': 50.0
+            },
+            'number_of_breakeven_positions': 0,
+            'number_of_non_profitable_positions': 0,
+            'number_of_profitable_positions': 1,
+            'total_invested_capital': 30.0,
+            'total_market_value': 50.0,
+            'total_positions': 1,
+            'total_profit_or_loss': 20.0
+        }
+
+        portfolio_summary = self.portfolio.projected_market_value(current_prices={'MSFT':{'lastPrice':5.0}})
+        self.assertDictEqual(correct_dict, portfolio_summary)
 
     def tearDown(self) -> None:
         """Teardown the Portfolio object."""
