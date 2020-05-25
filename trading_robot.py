@@ -20,7 +20,7 @@ REDIRECT_URI = config.get('main', 'REDIRECT_URI')
 CREDENTIALS_PATH = config.get('main', 'JSON_PATH')
 ACCOUNT_NUMBER = config.get('main', 'ACCOUNT_NUMBER')
 
-# Initalize the robot
+# Initalize the robot.
 trading_robot = PyRobot(
     client_id=CLIENT_ID,
     redirect_uri=REDIRECT_URI,

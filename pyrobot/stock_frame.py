@@ -1,15 +1,17 @@
+import numpy as np
 import pandas as pd
-from pandas.core.groupby import DataFrameGroupBy
-from pandas.core.window import RollingGroupby
-from pandas.core.window import Window
 
-from datetime import datetime
 from datetime import time
+from datetime import datetime
 from datetime import timezone
 
 from typing import List
 from typing import Dict
 from typing import Union
+
+from pandas.core.groupby import DataFrameGroupBy
+from pandas.core.window import RollingGroupby
+from pandas.core.window import Window
 
 
 class StockFrame():
@@ -51,8 +53,15 @@ class StockFrame():
         Returns:
         ----
         {DataFrameGroupBy} -- A `pandas.core.groupby.GroupBy` object with each symbol.
-        """        
-        self._symbol_groups: DataFrameGroupBy = self._frame.groupby(by='symbol')
+        """  
+
+        # Group by Symbol.   
+        self._symbol_groups: DataFrameGroupBy = self._frame.groupby(
+            by='symbol',
+            as_index=False,
+            sort=True
+        )
+
         return self._symbol_groups
 
     def symbol_rolling_groups(self, size: int) -> RollingGroupby:
@@ -81,7 +90,7 @@ class StockFrame():
 
         Returns:
         ----
-        pd.DataFrame -- A pandas dataframe.
+        {pd.DataFrame} -- A pandas dataframe.
         """          
         
         # Make a data frame.
@@ -101,7 +110,7 @@ class StockFrame():
 
         Returns:
         ----
-        pd.DataFrame -- A pandas dataframe.
+        {pd.DataFrame} -- A pandas dataframe.
         """        
 
         price_df['datetime'] = pd.to_datetime(price_df['datetime'], unit='ms', origin='unix')
@@ -165,4 +174,41 @@ class StockFrame():
             # Add the row.
             self.frame.loc[row_id, column_names] = new_row.values
 
-            self.frame.sort_index(inplace=True)       
+            self.frame.sort_index(inplace=True)
+
+    def do_indicator_exist(self, column_names: List[str]) -> bool:
+
+        if set(column_names).issubset(self._frame.columns):
+            return True
+        else:
+            raise KeyError("The following indicator columns are missing from the StockFrame: {missing_columns}".format(
+                missing_columns=set(column_names).difference(self._frame.columns)
+            )) 
+
+    def _check_signals(self, indicators: dict) -> pd.DataFrame:
+
+        # Grab the last rows.
+        last_rows = self._symbol_groups.tail(1)
+
+        conditions = []
+
+        # Check to see if all the columns exist.
+        if self.do_indicator_exist(column_names=indicators.keys()):
+
+            for indicator in indicators:
+
+                column = last_rows[indicator]
+                buy_condition_target = indicators[indicator]['buy']
+                sell_condition_target = indicators[indicator]['sell']
+
+                condition_1 = column > buy_condition_target
+                condition_2 = column > sell_condition_target
+
+                conditions.append((condition_1 & condition_2))
+
+
+
+        print(conditions)
+
+            
+

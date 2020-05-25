@@ -1,10 +1,11 @@
 from typing import Tuple
 from typing import List
+from typing import Optional
 from typing import Iterable
 
 class Portfolio():
 
-    def __init__(self, account_number: str = None) -> None:
+    def __init__(self, account_number: Optional[str]) -> None:
         """Initalizes a new instance of the Portfolio object.
         
         Keyword Arguments:
@@ -12,12 +13,12 @@ class Portfolio():
         account_number {str} -- An accout number to associate with the Portfolio. (default: {None})
         """
         
-        self.positions: dict = {}
-        self.positions_count: int = 0
-        self.market_value: float = 0.00
-        self.profit_loss: float = 0.00
-        self.risk_tolerance: float = 0.00
-        self.account_number: str = account_number
+        self.positions = {}
+        self.positions_count = 0
+        self.market_value = 0.00
+        self.profit_loss = 0.00
+        self.risk_tolerance = 0.00
+        self.account_number = account_number
 
     def add_positions(self, positions: List[dict]) -> dict:
         """Add Multiple positions to the portfolio at once.
@@ -43,7 +44,7 @@ class Portfolio():
                 },
                 {
                     'asset_type': 'equity',
-                    'quantity': 2,
+                    'quantity': 2,0
                     'purchase_price': 4.00,
                     'symbol': 'SQ',
                     'purchase_date': '2020-01-31'
@@ -74,27 +75,24 @@ class Portfolio():
         
         if isinstance(positions, list):
 
-            return_dict = {}
-
+            # Loop through each position.
             for position in positions:
+                
+                # Add the position.
+                self.add_position(
+                    symbol=position['symbol'],
+                    asset_type=position['asset_type'],
+                    quantity=position.get('quantity',0),
+                    purchase_price=position.get('purchase_price',0.0),
+                    purchase_date=position.get('purchase_date',None)
+                )
 
-                symbol = position['symbol']
-
-                self.positions[symbol] = {}
-                self.positions[symbol]['symbol'] = position['symbol']
-                self.positions[symbol]['quantity'] = position.get('quantity',0)
-                self.positions[symbol]['purchase_price'] = position.get('purchase_price',0.00)
-                self.positions[symbol]['purchase_date'] = position.get('purchase_date',None)
-                self.positions[symbol]['asset_type'] = position['asset_type']
-
-                return_dict[symbol] = self.positions[symbol]
-
-            return return_dict
+            return self.positions
 
         else:
             raise TypeError('Positions must be a list of dictionaries.')
 
-    def add_position(self, symbol: str, asset_type: str, quantity: int = 0, purchase_price: float = 0.00, purchase_date: str = None) -> dict:
+    def add_position(self, symbol: str, asset_type: str, purchase_date: Optional[str], quantity: int = 0, purchase_price: float = 0.0) -> dict:
         """Adds a single new position to the the portfolio.
         
         Arguments:

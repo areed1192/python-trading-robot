@@ -1,8 +1,12 @@
+import operator
 import numpy as np
 import pandas as pd
 
-from typing import Tuple
+from typing import Any
 from typing import List
+from typing import Dict
+from typing import Tuple
+from typing import Optional
 from typing import Iterable
 
 from pyrobot.stock_frame import StockFrame
@@ -15,7 +19,6 @@ class Indicators():
     to easily add technical indicators to a StockFrame.
     """    
     
-
     def __init__(self, price_data_frame: StockFrame) -> None:
         """Initalizes the Indicator Client.
 
@@ -34,15 +37,63 @@ class Indicators():
             )
             >>> price_data_frame = pd.DataFrame(data=historical_prices)
             >>> indicator_client = Indicators(price_data_frame=price_data_frame)
-            >>> price_data_frame_indicators = indicator_client.price_data_frame
+            >>> indicator_client.price_data_frame
         """
 
-        self._price_data_frame: StockFrame = price_data_frame
-        self._price_groups = self._price_data_frame.symbol_groups
+        self._stock_frame: StockFrame = price_data_frame
+        self._price_groups = price_data_frame.symbol_groups
         self._current_indicators = {}
+        self._indicator_signals = {}
+        self._frame = self._stock_frame.frame
         
         if self.is_multi_index:
             True
+
+    @property
+    def indicator_signals(self, indicator: Optional[str]) -> Dict:
+        """Return the raw Pandas Dataframe Object.
+
+        Arguments:
+        ----
+        indicator {Optional[str]} -- The indicator key, for example `ema` or `sma`.
+
+        Returns:
+        ----
+        {dict} -- Either all of the indicators or the specified indicator.
+        """
+
+        if indicator and indicator in self._indicator_signals:
+            return self._indicator_signals[indicator]
+        else:      
+            return self._indicator_signals
+
+    @indicator_signals.setter
+    def indicator_signals(self, indicator: str, buy: float, sell: float, condition_buy: Any, condition_sell: Any) -> None:
+        """Return the raw Pandas Dataframe Object.
+
+        Arguments:
+        ----
+        indicator {str} -- The indicator key, for example `ema` or `sma`.
+
+        buy {float} -- The buy signal threshold for the indicator.
+        
+        sell {float} -- The sell signal threshold for the indicator.
+
+        condition_buy {str} -- The operator which is used to evaluate the buy condition. For example, `">"` would
+            represent greater than or from the `operator` module it would represent `operator.gt`.
+        
+        condition_buy {str} -- The operator which is used to evaluate the sell condition. For example, `">"` would
+            represent greater than or from the `operator` module it would represent `operator.gt`.
+        """
+
+        # Add the key if it doesn't exist.
+        if indicator not in self._indicator_signals:
+            self._indicator_signals[indicator] = {}
+        
+        # Add the signals.
+        self._indicator_signals[indicator]['buy'] = buy     
+        self._indicator_signals[indicator]['sell'] = sell
+
 
     @property
     def price_data_frame(self) -> pd.DataFrame:
@@ -50,10 +101,10 @@ class Indicators():
 
         Returns:
         ----
-        pd.DataFrame -- A multi-index data frame.
+        {pd.DataFrame} -- A multi-index data frame.
         """
 
-        return self._price_data_frame.frame
+        return self._frame
 
     @price_data_frame.setter
     def price_data_frame(self, price_data_frame: pd.DataFrame) -> None:
@@ -64,7 +115,7 @@ class Indicators():
         price_data_frame {pd.DataFrame} -- A multi-index data frame.
         """
 
-        self._price_data_frame = price_data_frame
+        self._frame = price_data_frame
 
     @property
     def is_multi_index(self) -> bool:
@@ -75,7 +126,7 @@ class Indicators():
         {bool} -- `True` if the data frame is a `pd.MultiIndex` object. `False` otherwise.
         """
 
-        if isinstance(self._price_data_frame.frame.index, pd.MultiIndex):
+        if isinstance(self._frame.index, pd.MultiIndex):
             return True
         else:
             return False
@@ -85,23 +136,22 @@ class Indicators():
 
         Returns:
         ----
-        pd.DataFrame -- A data frame with the Change in Price.
+        {pd.DataFrame} -- A data frame with the Change in Price included.
         """
 
         locals_data = locals()
         del locals_data['self']
 
-        self._current_indicators['change_in_price'] = {}
-        self._current_indicators['change_in_price']['args'] = locals_data
-        self._current_indicators['change_in_price']['func'] = self.change_in_price
+        column_name = 'change_in_price'
+        self._current_indicators[column_name] = {}
+        self._current_indicators[column_name]['args'] = locals_data
+        self._current_indicators[column_name]['func'] = self.change_in_price
 
-
-        self._price_data_frame.frame['change_in_price'] = self._price_data_frame.frame.groupby(
-            by='symbol',
-            as_index=False
-        )['close'].transform(
+        self._frame[column_name] = self._price_groups['close'].transform(
             lambda x: x.diff()
         )
+
+        return self._frame
 
     def rsi(self, period: int, method: str = 'wilders') -> pd.DataFrame:
         """Calculates the Relative Strength Index (RSI).
@@ -116,7 +166,7 @@ class Indicators():
 
         Returns:
         ----
-        pd.DataFrame -- A Pandas data frame with the RSI indicator included.
+        {pd.DataFrame} -- A Pandas data frame with the RSI indicator included.
 
         Usage:
         ----
@@ -135,46 +185,52 @@ class Indicators():
         locals_data = locals()
         del locals_data['self']
 
-        self._current_indicators['rsi'] = {}
-        self._current_indicators['rsi']['args'] = locals_data
-        self._current_indicators['rsi']['func'] = self.rsi
-
-        # Define the price data frame.
-        price_frame = self._price_data_frame.frame
+        column_name = 'rsi'
+        self._current_indicators[column_name] = {}
+        self._current_indicators[column_name]['args'] = locals_data
+        self._current_indicators[column_name]['func'] = self.rsi
 
         # First calculate the Change in Price.
-        if 'change_in_price' not in price_frame.columns:
+        if 'change_in_price' not in self._frame.columns:
             self.change_in_price()
 
         # Define the up days.
-        price_frame['up_day'] = price_frame.groupby(
-            by='symbol',
-            as_index=False
-        )['change_in_price'].transform(lambda x : np.where(x >= 0, x, 0))
+        self._frame['up_day'] = self._price_groups['change_in_price'].transform(
+            lambda x : np.where(x >= 0, x, 0)
+        )
 
         # Define the down days.
-        price_frame['down_day'] = price_frame.groupby(
-            by='symbol',
-            as_index=False
-        )['change_in_price'].transform(lambda x : np.where(x < 0, x.abs(), 0))
+        self._frame['down_day'] = self._price_groups['change_in_price'].transform(
+            lambda x : np.where(x < 0, x.abs(), 0)
+        )
 
-        # Calculate the EWMA (Exponential Weighted Moving Average), meaning older values are given less weight compared to newer values.
-        price_frame['ewma_up'] = price_frame.groupby('symbol')['up_day'].transform(lambda x: x.ewm(span = period).mean())
-        price_frame['ewma_down'] = price_frame.groupby('symbol')['down_day'].transform(lambda x: x.ewm(span = period).mean())
+        # Calculate the EWMA for the Up days.
+        self._frame['ewma_up'] = self._price_groups['up_day'].transform(
+            lambda x: x.ewm(span = period).mean()
+        )
+
+        # Calculate the EWMA for the Down days.
+        self._frame['ewma_down'] = self._price_groups['down_day'].transform(
+            lambda x: x.ewm(span = period).mean()
+        )
 
         # Calculate the Relative Strength
-        relative_strength = price_frame['ewma_up'] / price_frame['ewma_down']
+        relative_strength = self._frame['ewma_up'] / self._frame['ewma_down']
 
         # Calculate the Relative Strength Index
         relative_strength_index = 100.0 - (100.0 / (1.0 + relative_strength))
 
         # Add the info to the data frame.
-        price_frame['rsi'] = np.where(relative_strength_index == 0, 100, 100 - (100 / (1 + relative_strength_index)))
+        self._frame['rsi'] = np.where(relative_strength_index == 0, 100, 100 - (100 / (1 + relative_strength_index)))
 
         # Clean up before sending back.
-        price_frame.drop(labels=['ewma_up', 'ewma_down', 'down_day', 'up_day', 'change_in_price'], axis=1, inplace=True)
+        self._frame.drop(
+            labels=['ewma_up', 'ewma_down', 'down_day', 'up_day', 'change_in_price'],
+            axis=1,
+            inplace=True
+        )
 
-        return price_frame
+        return self._frame
 
     def sma(self, period: int) -> pd.DataFrame:
         """Calculates the Simple Moving Average (SMA).
@@ -185,7 +241,7 @@ class Indicators():
 
         Returns:
         ----
-        pd.DataFrame -- A Pandas data frame with the SMA indicator included.
+        {pd.DataFrame} -- A Pandas data frame with the SMA indicator included.
 
         Usage:
         ----
@@ -203,19 +259,17 @@ class Indicators():
         locals_data = locals()
         del locals_data['self']
 
-        self._current_indicators['sma'] = {}
-        self._current_indicators['sma']['args'] = locals_data
-        self._current_indicators['sma']['func'] = self.sma
-
-        # Grab the Price Frame.
-        price_frame = self._price_data_frame.frame
+        column_name = 'sma'
+        self._current_indicators[column_name] = {}
+        self._current_indicators[column_name]['args'] = locals_data
+        self._current_indicators[column_name]['func'] = self.sma
 
         # Add the SMA
-        price_frame['sma'] = price_frame.groupby('symbol', sort=True)['close'].transform(
+        self._frame[column_name] = self._price_groups['close'].transform(
             lambda x: x.rolling(window=period).mean()
         )
 
-        return price_frame
+        return self._frame
 
     def ema(self, period: int, alpha: float = 0.0) -> pd.DataFrame:
         """Calculates the Exponential Moving Average (EMA).
@@ -226,7 +280,7 @@ class Indicators():
 
         Returns:
         ----
-        pd.DataFrame -- A Pandas data frame with the EMA indicator included.
+        {pd.DataFrame} -- A Pandas data frame with the EMA indicator included.
 
         Usage:
         ----
@@ -244,22 +298,23 @@ class Indicators():
         locals_data = locals()
         del locals_data['self']
 
-        self._current_indicators['ema'] = {}
-        self._current_indicators['ema']['args'] = locals_data
-        self._current_indicators['ema']['func'] = self.ema
-
-        # Grab the Price Frame.
-        price_frame = self._price_data_frame.frame
+        column_name = 'ema'
+        self._current_indicators[column_name] = {}
+        self._current_indicators[column_name]['args'] = locals_data
+        self._current_indicators[column_name]['func'] = self.ema
 
         # Add the EMA
-        price_frame['ema'] = price_frame.groupby('symbol', sort=True)['close'].transform(
+        self._frame[column_name] = self._price_groups['close'].transform(
             lambda x: x.ewm(span=period).mean()
         )
 
-        return price_frame
+        return self._frame
 
     def refresh(self):
-        """Updates the Indicator columns after adding the new rows."""        
+        """Updates the Indicator columns after adding the new rows."""
+
+        # First update the groups since, we have new rows.
+        self._price_groups = self._stock_frame.symbol_groups
 
         # Grab all the details of the indicators so far.
         for indicator in self._current_indicators:
