@@ -1,7 +1,14 @@
+import numpy as np
+
+from pandas import DataFrame
 from typing import Tuple
 from typing import List
 from typing import Optional
 from typing import Iterable
+
+
+from pyrobot.stock_frame import StockFrame
+from td.client import TDClient
 
 class Portfolio():
 
@@ -12,13 +19,20 @@ class Portfolio():
         ----
         account_number {str} -- An accout number to associate with the Portfolio. (default: {None})
         """
-        
+
         self.positions = {}
         self.positions_count = 0
-        self.market_value = 0.00
+
         self.profit_loss = 0.00
+        self.market_value = 0.00
         self.risk_tolerance = 0.00
         self.account_number = account_number
+
+        self._historical_prices = []
+
+        self._td_client: TDClient = None
+        self._stock_frame: StockFrame = None
+        self._stock_frame_daily: StockFrame = None
 
     def add_positions(self, positions: List[dict]) -> dict:
         """Add Multiple positions to the portfolio at once.
@@ -182,8 +196,7 @@ class Portfolio():
             return (False, "{symbol} did not exist in the porfolio.".format(symbol=symbol))
 
     def total_allocation(self) -> dict:
-        """Returns a summary of the portfolio by asset allocation.
-        """        
+        """Returns a summary of the portfolio by asset allocation."""        
 
         total_allocation = {
             'stocks':[],
@@ -197,11 +210,134 @@ class Portfolio():
             for symbol in self.positions:
                 total_allocation[self.positions[symbol]['asset_type']].append(self.positions[symbol])
 
-    def risk_exposure(self):
-        pass
+    def portfolio_variance(self, weights: dict, covariance_matrix: DataFrame) -> dict:
+
+        sorted_keys = list(weights.keys())
+        sorted_keys.sort()
+
+        sorted_weights = np.array([weights[symbol] for symbol in sorted_keys])
+        portfolio_variance = np.dot(
+            sorted_weights.T,
+            np.dot(covariance_matrix, sorted_weights)
+        )
+
+        return portfolio_variance
+
+    def portfolio_metrics(self) -> dict:
+        """Calculates different portfolio risk metrics using daily data.
+
+        Overview:
+        ----
+        To build an effective summary of our portfolio we will need to
+        calculate different metrics that help represent the risk of our
+        portfolio and it's performance. The following metrics will be calculated
+        in this method:
+
+        1. Standard Deviation of Percent Returns.
+        2. Covariance of Percent Returns.
+        2. Variance of Percent Returns.
+        3. Average Percent Return
+        4. Weighted Average Percent Return.
+        5. Portfolio Variance.
+
+        Returns:
+        ----
+        dict -- [description]
+        """        
+
+        if not self._stock_frame_daily:
+            self._grab_daily_historical_prices()
+
+        # Calculate the weights.
+        porftolio_weights = self.portfolio_weights()
+
+        # Calculate the Daily Returns (%)
+        self._stock_frame_daily.frame['daily_returns_pct'] = self._stock_frame_daily.symbol_groups['close'].transform(
+            lambda x: x.pct_change()
+        )
+
+        # Calculate the Daily Returns (Mean)
+        self._stock_frame_daily.frame['daily_returns_avg'] = self._stock_frame_daily.symbol_groups['daily_returns_pct'].transform(
+            lambda x: x.mean()
+        )
+
+        # Calculate the Daily Returns (Standard Deviation)
+        self._stock_frame_daily.frame['daily_returns_std'] = self._stock_frame_daily.symbol_groups['daily_returns_pct'].transform(
+            lambda x: x.std()
+        )
+
+        # Calculate the Covariance.
+        returns_cov = self._stock_frame_daily.frame.unstack(level=0)['daily_returns_pct'].cov()
+
+        # Take the other columns and get ready to add them to our dictionary.
+        returns_avg = self._stock_frame_daily.symbol_groups['daily_returns_avg'].tail(1).to_dict()
+        returns_std = self._stock_frame_daily.symbol_groups['daily_returns_std'].tail(1).to_dict()
+
+        metrics_dict = {}
+
+        portfolio_variance = self.portfolio_variance(
+            weights=porftolio_weights,
+            covariance_matrix=returns_cov
+        )
+
+        for index_tuple in returns_std:
+
+            symbol = index_tuple[0]
+            metrics_dict[symbol] = {}
+            metrics_dict[symbol]['weight'] = porftolio_weights[symbol]
+            metrics_dict[symbol]['average_returns'] = returns_avg[index_tuple]
+            metrics_dict[symbol]['weighted_returns'] = returns_avg[index_tuple] * metrics_dict[symbol]['weight']
+            metrics_dict[symbol]['standard_deviation_of_returns'] = returns_std[index_tuple]
+            metrics_dict[symbol]['variance_of_returns'] = returns_std[index_tuple] ** 2
+            metrics_dict[symbol]['covariance_of_returns'] = returns_cov.loc[[symbol]].to_dict()
+
+        metrics_dict['portfolio'] = {}
+        metrics_dict['portfolio']['variance'] = portfolio_variance
+
+        return metrics_dict
+
+    def portfolio_weights(self) -> dict:
+        """Calculate the weights for each position in the portfolio
+
+        Returns:
+        ----
+        {dict} -- Each symbol with their designated weights.
+        """        
+
+        weights = {}
+
+        # First grab all the symbols.
+        symbols = self.positions.keys()
+
+        # Grab the quotes.
+        quotes = self.td_client.get_quotes(instruments = list(symbols))
+
+        # Grab the projected market value.
+        projected_market_value_dict = self.projected_market_value(current_prices=quotes)
+
+        # Loop through each symbol.
+        for symbol in projected_market_value_dict:
+            
+            # Calculate the weights.
+            if symbol != 'total':
+                weights[symbol] = projected_market_value_dict[symbol]['total_market_value'] / projected_market_value_dict['total']['total_market_value']
+
+        return weights
 
     def portfolio_summary(self):
-        pass
+        """Generates a summary of our portfolio."""        
+
+        # First grab all the symbols.
+        symbols = self.positions.keys()
+
+        # Grab the quotes.
+        quotes = self.td_client.get_quotes(instruments = list(symbols))
+
+        portfolio_summary_dict = {}
+        portfolio_summary_dict['projected_market_value'] = self.projected_market_value(current_prices=quotes)
+        portfolio_summary_dict['portfolio_weights'] = self.portfolio_weights()
+        portfolio_summary_dict['portfolio_risk'] = ""
+
     
     def in_portfolio(self, symbol: str) -> bool:
         """checks if the symbol is in the portfolio.
@@ -341,20 +477,122 @@ class Portfolio():
                 else:
                     position_count_break_even += 1
 
-        projected_value['total_positions'] = len(self.positions)
-        projected_value['total_market_value'] = total_value
-        projected_value['total_invested_capital'] = total_invested_capital
-        projected_value['total_profit_or_loss'] = total_profit_or_loss
-        projected_value['number_of_profitable_positions'] = position_count_profitable
-        projected_value['number_of_non_profitable_positions'] = position_count_not_profitable
-        projected_value['number_of_breakeven_positions'] = position_count_break_even
+        projected_value['total'] = {}
+        projected_value['total']['total_positions'] = len(self.positions)
+        projected_value['total']['total_market_value'] = total_value
+        projected_value['total']['total_invested_capital'] = total_invested_capital
+        projected_value['total']['total_profit_or_loss'] = total_profit_or_loss
+        projected_value['total']['number_of_profitable_positions'] = position_count_profitable
+        projected_value['total']['number_of_non_profitable_positions'] = position_count_not_profitable
+        projected_value['total']['number_of_breakeven_positions'] = position_count_break_even
 
         return projected_value
 
+    @property
+    def historical_prices(self) -> List[dict]:
+        """Gets the historical prices for the Portfolio
 
+        Returns:
+        ----
+        List[dict] -- A list of historical candle prices.
+        """        
+        
+        return self._historical_prices
 
+    @historical_prices.setter
+    def historical_prices(self, historical_prices: List[dict]) -> None:
+        """Sets the historical prices for the Portfolio
 
+        Arguments:
+        ----
+        historical_prices {List[dict]} -- A list of historical candle prices.
+        """
 
+        self._historical_prices = historical_prices
 
+    @property
+    def stock_frame(self) -> StockFrame:
+        """Gets the StockFrame object for the Portfolio
 
+        Returns:
+        ----
+        {StockFrame} -- A StockFrame object with symbol groups, and rolling windows.
+        """
+
+        return self._stock_frame
+
+    @stock_frame.setter
+    def stock_frame(self, stock_frame: StockFrame) -> None:
+        """Sets the StockFrame object for the Portfolio
+
+        Arguments:
+        ----
+        stock_frame {StockFrame} -- A StockFrame object with symbol groups, and rolling windows.
+        """
+
+        self._stock_frame = stock_frame
+
+    @property
+    def td_client(self) -> TDClient:
+        """Gets the TDClient object for the Portfolio
+
+        Returns:
+        ----
+        {TDClient} -- An authenticated session with the TD API.
+        """
+
+        return self._td_client
+
+    @td_client.setter
+    def td_client(self, td_client: TDClient) -> None:
+        """Sets the TDClient object for the Portfolio
+
+        Arguments:
+        ----
+        td_client {TDClient} -- An authenticated session with the TD API.
+        """
+
+        self._td_client: TDClient = td_client
+
+    def _grab_daily_historical_prices(self) -> StockFrame:
+        """Grabs the daily historical prices for each position.
+
+        Returns:
+        ----
+        {StockFrame} -- A StockFrame object with data organized, grouped, and sorted.
+        """
+
+        new_prices = []
+
+        # Loop through each position.
+        for symbol in self.positions:
+
+            # Grab the historical prices.
+            historical_prices_response = self.td_client.get_price_history(
+                symbol=symbol,                
+                period_type='year',
+                period=1,
+                frequency_type='daily',
+                frequency=1,
+                extended_hours=True
+            )
+
+            # Loop through the chandles.
+            for candle in historical_prices_response['candles']:
+
+                new_price_mini_dict = {}
+                new_price_mini_dict['symbol'] = symbol
+                new_price_mini_dict['open'] = candle['open']
+                new_price_mini_dict['close'] = candle['close']
+                new_price_mini_dict['high'] = candle['high']
+                new_price_mini_dict['low'] = candle['low']
+                new_price_mini_dict['volume'] = candle['volume']
+                new_price_mini_dict['datetime'] = candle['datetime']
+                new_prices.append(new_price_mini_dict)
+
+        # Create and set the StockFrame
+        self._stock_frame_daily = StockFrame(data=new_prices)
+        self._stock_frame_daily.create_frame()
+
+        return self._stock_frame_daily
 

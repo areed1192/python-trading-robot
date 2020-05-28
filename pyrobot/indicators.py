@@ -329,9 +329,6 @@ class Indicators():
             # Update the function.
             indicator_function(**indicator_argument)
 
-            print(indicator_argument)
-            print(indicator_function)
-
     def check_signals(self) -> Union[pd.DataFrame, None]:
         """Checks to see if any signals have been generated.
 

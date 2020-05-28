@@ -119,10 +119,17 @@ new_trade.good_till_cancel(cancel_time=datetime.now())
 new_trade.modify_session(session='am')
 
 # Add an Order Leg.
-new_trade.instrument(symbol='MSFT', quantity=2, asset_type='EQUITY')
+new_trade.instrument(
+    symbol='MSFT',
+    quantity=2,
+    asset_type='EQUITY'
+)
 
 # Add a Stop Loss Order with the Main Order.
-new_trade.add_stop_loss(stop_size=.10, percentage=False)
+new_trade.add_stop_loss(
+    stop_size=.10,
+    percentage=False
+)
 
 # Print out the order.
 pprint.pprint(new_trade.order)
@@ -141,6 +148,15 @@ historical_prices = trading_robot.grab_historical_prices(
 
 # Convert data to a Data Frame.
 stock_frame = trading_robot.create_stock_frame(data=historical_prices['aggregated'])
+
+# We can also add the stock frame to the Portfolio object.
+trading_robot.portfolio.stock_frame = stock_frame
+
+# Additionally the historical prices can be set as well.
+trading_robot.portfolio.historical_prices = historical_prices
+
+# Portfolio Variance
+pprint.pprint(trading_robot.portfolio.portfolio_metrics())
 
 # Create an indicator Object.
 indicator_client = Indicators(price_data_frame=stock_frame)
@@ -163,29 +179,40 @@ indicator_client.set_indicator_signal(
     condition_sell=operator.le
 )
 
-# print the frame.
-print(stock_frame.frame)
+# Define a trading dictionary.
+trades_dict = {
+    'MSFT': {
+        'trade_func': trading_robot.trades['long_msft'],
+        'trade_id': trading_robot.trades['long_msft'].trade_id
+    }
+}
 
-keep_trading = True
+while True:
 
-while keep_trading:
-    
-    # Grab a new quote.
-    current_quotes = trading_robot.grab_current_quotes()
+    # Grab the latest bar.
+    latest_bars = trading_robot.get_latest_bar()
 
     # Add to the Stock Frame.
-    stock_frame.add_rows(data=current_quotes)
-
-    print(stock_frame.frame)
+    stock_frame.add_rows(data=latest_bars)
 
     # Refresh the Indicators.
     indicator_client.refresh()
+
+    print("="*50)
+    print("Current StockFrame")
+    print("-"*50)
+    print(stock_frame.symbol_groups.tail())
+    print("-"*50)
+    print("")
 
     # Check for signals.
     signals = indicator_client.check_signals()
 
     # Execute Trades.
-    trading_robot.execute_signals()
+    trading_robot.execute_signals(signals=signals, trades_to_execute=trades_dict)
+    
+    # Grab the last bar.
+    last_bar_timestamp = trading_robot.stock_frame.frame.tail(1).index.get_level_values(1)
 
-    # Sleep 5 seconds.
-    time_lib.sleep(5)
+    # Wait till the next bar.
+    trading_robot.wait_till_next_bar(last_bar_timestamp=last_bar_timestamp)

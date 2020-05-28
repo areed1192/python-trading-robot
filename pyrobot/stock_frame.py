@@ -111,7 +111,7 @@ class StockFrame():
         Returns:
         ----
         {pd.DataFrame} -- A pandas dataframe.
-        """        
+        """     
 
         price_df['datetime'] = pd.to_datetime(price_df['datetime'], unit='ms', origin='unix')
 
@@ -147,25 +147,25 @@ class StockFrame():
 
         column_names = ['open', 'close', 'high', 'low', 'volume']
 
-        for symbol in data:
+        for quote in data:
 
             # Parse the Timestamp.
             time_stamp = pd.to_datetime(
-                data[symbol]['quoteTimeInLong'],
+                quote['datetime'],
                 unit='ms',
                 origin='unix'
             )
 
             # Define the Index Tuple.
-            row_id = (symbol, time_stamp)
+            row_id = (quote['symbol'], time_stamp)
 
             # Define the values.
             row_values = [
-                data[symbol]['openPrice'],
-                data[symbol]['closePrice'],
-                data[symbol]['highPrice'],
-                data[symbol]['lowPrice'],
-                data[symbol]['askSize'] + data[symbol]['bidSize']
+                quote['open'],
+                quote['close'],
+                quote['high'],
+                quote['low'],
+                quote['volume']
             ]
 
             # Create a new row.
@@ -257,4 +257,4 @@ class StockFrame():
                 conditions.append(('buys', condition_1))
                 conditions.append(('sells', condition_2))
 
-        print(conditions)          
+        return conditions

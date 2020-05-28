@@ -1,6 +1,8 @@
 import datetime
-from typing import Union
+
 from typing import List
+from typing import Union
+from typing import Optional
 
 class Trade():
 
@@ -18,12 +20,18 @@ class Trade():
     def __init__(self):
         """Initalizes a new order."""            
         
-        self.order: dict = None
-        self.side: str = ""
-        self.enter_or_exit: str = ""
-        self._triggered_added: bool = False
+        self.order = {}
+        self.trade_id = ""
 
-    def new_trade(self, order_type: str, side: str, enter_or_exit: str, price: float = 0.00, stop_limit_price: float = 0.00) -> dict:
+        self.side = ""
+        self.side_opposite = ""
+        self.enter_or_exit = ""
+        self.enter_or_exit_opposite = ""
+
+        self._order_response = {}
+        self._triggered_added = False
+
+    def new_trade(self, trade_id: str, order_type: str, side: str, enter_or_exit: str, price: float = 0.00, stop_limit_price: float = 0.00) -> dict:
         """Creates a new Trade object template.
 
         A trade object is a template that can be used to help build complex trades
@@ -46,6 +54,8 @@ class Trade():
         ----
         dict -- [description]
         """
+
+        self.trade_id = trade_id
 
         self.order_types = {
             'mkt':'MARKET',
@@ -115,6 +125,11 @@ class Trade():
         if self.enter_or_exit == 'exit':
             self.enter_or_exit_opposite = 'enter'
 
+        if self.side == 'long':
+            self.side_opposite == 'short'
+        if self.side == 'short':
+            self.side_opposite == 'long'
+
     def instrument(self, symbol: str, quantity: int, asset_type: str, sub_asset_type: str = None) -> dict:
         """Adds an instrument to a trade.
         
@@ -157,11 +172,39 @@ class Trade():
         self.order['duration'] = 'GOOD_TILL_CANCEL'
         self.order['cancelTime'] = cancel_time.isoformat()
 
-    def modify_side(self):
-        pass
+    def modify_side(self, side: Optional[str]) -> None:
+        """Modifies the Side the order takes.
+
+        Arguments:
+        ----
+        side {str} -- The side to be set. Can be one of the following:
+            `['buy', 'sell', 'sell_short', 'buy_to_cover']`.
+
+        Raises:
+        ----
+        ValueError -- If the `side` argument does not match one of the valid sides,
+            then a ValueError will be raised.
+        """
+
+        # Validate the Side.
+        if side and side not in ['buy', 'sell', 'sell_short', 'buy_to_cover']:
+            raise ValueError("The side you have specified is not valid. Please choose a valid side: ['buy', 'sell', 'sell_short', 'buy_to_cover']")
+        
+        # Set the Order.
+        if side:
+            self.order['orderLegCollection'][0]['instructions'] = side
+        else:
+            self.order['orderLegCollection'][0]['instructions'] = self.order_instructions[self.enter_or_exit][self.side_opposite]
 
     def add_box_range(self, profit_size: float = 0.00, percentage: bool = False, stop_limit: bool = False):  
         """Adds a Stop Loss(or  Stop-Limit order), and a limit Order
+
+        Arguments:
+        ----
+        profit_size {float} -- The size of desired profit. For example, `0.10`.
+
+        percentage {float} -- Specifies whether the `profit_size` is in absolute dollars `False` or
+            in percentage terms `True`.
 
         Keyword Arguments:
         ----
@@ -375,10 +418,18 @@ class Trade():
         # Calculate the new price.
         if percentage:
             adjustment = 1.0 - profit_size
-            new_price = self._calculate_new_price(price=price, adjustment=adjustment, percentage=True)
+            new_price = self._calculate_new_price(
+                price=price,
+                adjustment=adjustment,
+                percentage=True
+            )
         else:
             adjustment = profit_size
-            new_price = self._calculate_new_price(price=price, adjustment=adjustment, percentage=False)
+            new_price = self._calculate_new_price(
+                price=price,
+                adjustment=adjustment,
+                percentage=False
+            )
 
         # Build the order.
         take_profit_order = {
@@ -449,3 +500,25 @@ class Trade():
             self.order['session'] = session.upper()
         else:
             raise ValueError('Invalid session, choose either am, pm, normal, or seamless')
+    
+    @property
+    def order_response(self) -> dict:
+        """Returns the order response from submitting an order.
+
+        Returns:
+        ----
+        {dict} -- The order response dictionary.
+        """
+
+        return self._order_response
+
+    @order_response.setter
+    def order_response(self, order_response_dict: dict) -> None:
+        """Sets the order response from submitting an order.
+
+        Arguments:
+        ----
+        order_response_dict {dict} -- The order response dictionary.
+        """
+
+        self._order_response = order_response_dict
