@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 
 from typing import List
 from typing import Union
@@ -160,7 +160,7 @@ class Trade():
 
         return self.order['orderLegCollection'][0]
 
-    def good_till_cancel(self, cancel_time: datetime.datetime) -> None:
+    def good_till_cancel(self, cancel_time: datetime) -> None:
         """Converts an order to a `Good Till Cancel` order.
         
         Arguments:
@@ -522,3 +522,28 @@ class Trade():
         """
 
         self._order_response = order_response_dict
+
+    def _generate_order_id(self) -> str:
+        """Generates an ID that can be used to identify the order.
+
+        Returns:
+        ----
+        {str} -- The order ID that was generated.
+        """        
+
+        # If we have an order, then generate it.
+        if self.order:
+            
+            order_id = "{symbol}_{side}_{enter_or_exit}_{timestamp}"
+
+            order_id = order_id.format(
+                symbol=self.symbol,
+                side=self.side,
+                enter_or_exit=self.enter_or_exit,
+                timestamp=datetime.now().timestamp()
+            )
+
+            return order_id
+
+        else:
+            return ""

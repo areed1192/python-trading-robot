@@ -39,7 +39,12 @@ class PyRobotTradeTest(TestCase):
         """Create a new market order."""
 
         # Create a new Trade Object.
-        new_trade = self.robot.create_trade(enter_or_exit='enter', long_or_short='short',order_type='mkt')
+        new_trade = self.robot.create_trade(
+            trade_id='test_1',
+            enter_or_exit='enter',
+            long_or_short='short',
+            order_type='mkt'
+        )
 
         self.assertIsInstance(new_trade, Trade)
         self.assertEqual(new_trade.order_type, 'mkt')
@@ -48,7 +53,12 @@ class PyRobotTradeTest(TestCase):
         """Create a new limit order."""
 
         # Create a new Trade Object.
-        new_trade = self.robot.create_trade(enter_or_exit='enter', long_or_short='short',order_type='lmt')
+        new_trade = self.robot.create_trade(
+            trade_id='test_1',
+            enter_or_exit='enter',
+            long_or_short='short',
+            order_type='lmt'
+        )
 
         self.assertIsInstance(new_trade, Trade)
         self.assertEqual(new_trade.order_type, 'lmt')
@@ -57,7 +67,12 @@ class PyRobotTradeTest(TestCase):
         """Create a new stop order."""
 
         # Create a new Trade Object.
-        new_trade = self.robot.create_trade(enter_or_exit='enter', long_or_short='short',order_type='stop')
+        new_trade = self.robot.create_trade(
+            trade_id='test_1',
+            enter_or_exit='enter',
+            long_or_short='short',
+            order_type='stop'
+        )
 
         self.assertIsInstance(new_trade, Trade)
         self.assertEqual(new_trade.order_type, 'stop')
@@ -67,6 +82,7 @@ class PyRobotTradeTest(TestCase):
 
         # Create a new Trade Object.
         new_trade = self.robot.create_trade(
+            trade_id='test_1',
             enter_or_exit='enter',
             long_or_short='long',
             order_type='lmt',
@@ -84,7 +100,7 @@ class PyRobotTradeTest(TestCase):
         }
         
         # Add an instrument to the Trade.
-        new_trade.instrument(symbol='MSFT',quantity=2, asset_type='EQUITY')
+        new_trade.instrument(symbol='MSFT', quantity=2, asset_type='EQUITY')
         self.assertDictEqual(new_trade.order['orderLegCollection'][0], order_leg)
 
     def test_add_stop_loss_percentage(self):
@@ -92,6 +108,7 @@ class PyRobotTradeTest(TestCase):
         
         # Create a new Trade Object.
         new_trade = self.robot.create_trade(
+            trade_id='test_1',
             enter_or_exit='enter',
             long_or_short='long',
             order_type='lmt',
@@ -131,6 +148,7 @@ class PyRobotTradeTest(TestCase):
         
         # Create a new Trade Object.
         new_trade = self.robot.create_trade(
+            trade_id='test_1',
             enter_or_exit='enter',
             long_or_short='long',
             order_type='lmt',
@@ -138,7 +156,7 @@ class PyRobotTradeTest(TestCase):
         )
 
         # Add a new instrument.
-        new_trade.instrument(symbol='MSFT',quantity=2, asset_type='EQUITY')
+        new_trade.instrument(symbol='MSFT', quantity=2, asset_type='EQUITY')
 
         # Add a new stop Loss.
         new_trade.add_stop_loss(stop_size=.10, percentage=False)

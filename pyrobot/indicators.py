@@ -50,7 +50,7 @@ class Indicators():
         if self.is_multi_index:
             True
 
-    def get_indicator_signal(self, indicator: Optional[str]) -> Dict:
+    def get_indicator_signal(self, indicator: Optional[str]= None) -> Dict:
         """Return the raw Pandas Dataframe Object.
 
         Arguments:

@@ -25,7 +25,8 @@ ACCOUNT_NUMBER = config.get('main', 'ACCOUNT_NUMBER')
 trading_robot = PyRobot(
     client_id=CLIENT_ID,
     redirect_uri=REDIRECT_URI,
-    credentials_path=CREDENTIALS_PATH
+    credentials_path=CREDENTIALS_PATH,
+    paper_trading=True
 )
 
 # Create a Portfolio

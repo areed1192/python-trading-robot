@@ -23,7 +23,7 @@ from td.utils import milliseconds_since_epoch
 
 class PyRobot():
 
-    def __init__(self, client_id: str, redirect_uri: str, credentials_path: Optional[str] = None, trading_account: Optional[str] = None) -> None:
+    def __init__(self, client_id: str, redirect_uri: str, paper_trading: bool = True, credentials_path: Optional[str] = None, trading_account: Optional[str] = None) -> None:
         """Initalizes a new instance of the robot and logs into the API platform specified.
         
         Arguments:
@@ -52,6 +52,7 @@ class PyRobot():
         self.trades = {}
         self.historical_prices = {}
         self.stock_frame: StockFrame = None
+        self.paper_trading = paper_trading
 
         self._bar_size = None
         self._bar_type = None
@@ -178,7 +179,7 @@ class PyRobot():
             return True
         else:
             return False
-
+            
     def create_portfolio(self) -> Portfolio:
         """Create a new portfolio.
 
@@ -566,7 +567,7 @@ class PyRobot():
         """        
 
         last_bar_time = last_bar_timestamp.to_pydatetime()[0].replace(tzinfo = timezone.utc)
-        next_bar_time = last_bar_time + timedelta(seconds=120)
+        next_bar_time = last_bar_time + timedelta(seconds=60)
         curr_bar_time = datetime.now(tz=timezone.utc)
 
         last_bar_timestamp = int(last_bar_time.timestamp())
@@ -575,6 +576,9 @@ class PyRobot():
 
         _time_to_wait_bar = next_bar_timestamp - last_bar_timestamp
         time_to_wait_now = next_bar_timestamp - curr_bar_timestamp
+
+        if time_to_wait_now < 0:
+            time_to_wait_now = 0
 
         print("="*80)
         print("Pausing for the next bar")
@@ -651,16 +655,38 @@ class PyRobot():
 
                 # Check to see if there is a Trade object.
                 if symbol in trades_to_execute:
-                    
+
+                    if self.portfolio.in_portfolio(symbol=symbol):
+                        self.portfolio.set_ownership_status(symbol=symbol, ownership=True)
+
                     # Set the Execution Flag.
                     trades_to_execute[symbol]['has_executed'] = True
-                    
-                    # # Execute the order.
-                    # order_response = self.execute_orders(
-                    #     trade_obj=trades_to_execute[symbol]['trade_func']
-                    # )
+                    trade_obj: Trade = trades_to_execute[symbol]['trade_func']
 
-                    # order_responses.append(order_response)
+                    if not self.paper_trading:
+                    
+                        # Execute the order.
+                        order_response = self.execute_orders(
+                            trade_obj=trade_obj
+                        )
+
+                        order_response = {
+                            'order_id': order_response['order_id'],
+                            'request_body': order_response['request_body'],
+                            'timestamp': datetime.now().isoformat()
+                        }
+
+                        order_responses.append(order_response)
+                    
+                    else:
+
+                        order_response = {
+                            'order_id': trade_obj._generate_order_id(),
+                            'request_body': trade_obj.order,
+                            'timestamp': datetime.now().isoformat()
+                        }
+
+                        order_responses.append(order_response)
 
         elif not sells.empty:
 
@@ -675,14 +701,40 @@ class PyRobot():
                     
                     # Set the Execution Flag.
                     trades_to_execute[symbol]['has_executed'] = True
-                    
-                    # # Execute the order.
-                    # order_response = self.execute_orders(
-                    #     trade_obj=trades_to_execute[symbol]['trade_func']
-                    # )
 
-                    # order_responses.append(order_response)
-        
+                    if self.portfolio.in_portfolio(symbol=symbol):
+                        self.portfolio.set_ownership_status(symbol=symbol, ownership=False)
+
+                    trade_obj: Trade = trades_to_execute[symbol]['trade_func']
+
+                    if not self.paper_trading:
+                    
+                        # Execute the order.
+                        order_response = self.execute_orders(
+                            trade_obj=trade_obj
+                        )
+
+                        order_response = {
+                            'order_id': order_response['order_id'],
+                            'request_body': order_response['request_body'],
+                            'timestamp': datetime.now().isoformat()
+                        }
+
+                        order_responses.append(order_response)
+
+                    else:
+
+                        order_response = {
+                            'order_id': trade_obj._generate_order_id(),
+                            'request_body': trade_obj.order,
+                            'timestamp': datetime.now().isoformat()
+                        }
+
+                        order_responses.append(order_response)
+
+        # Save the response.
+        self.save_orders(order_response_dict=order_responses)
+
         return order_responses
 
     def execute_orders(self, trade_obj: Trade) -> dict:
@@ -709,9 +761,6 @@ class PyRobot():
             order=trade_obj.order
         )
 
-        # Save the response.
-        self.save_orders(order_response_dict=order_dict)
-
         return order_dict
 
     def save_orders(self, order_response_dict: dict) -> bool:
@@ -726,13 +775,24 @@ class PyRobot():
         {bool} -- `True` if the orders were successfully saved.
         """
 
+        # Define the folder.
+        folder: pathlib.PurePath = pathlib.Path(__file__).parents[1].joinpath("data")
+        
+        # See if it exist, if not create it.
+        if not folder.exists():
+            folder.mkdir()
+
+        # Define the file path.
+        file_path = folder.joinpath('orders.json')
+
         # First check if the file alread exists.
-        if pathlib.Path(__file__).parents[1].joinpath('data/orders.json').exists():
+        if file_path.exists():
             
             with open('data/orders.json', 'r') as order_json:
                 orders_list = json.load(order_json)
         
         else:
+
             orders_list = []
 
         # Combine both lists.

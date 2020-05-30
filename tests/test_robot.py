@@ -11,8 +11,10 @@ from datetime import timezone
 from datetime import timedelta
 from configparser import ConfigParser
 
+from pyrobot.trades import Trade
 from pyrobot.robot import PyRobot
 from pyrobot.portfolio import Portfolio
+from pyrobot.stock_frame import StockFrame
 
 
 class PyRobotTest(TestCase):
@@ -123,6 +125,28 @@ class PyRobotTest(TestCase):
         )
 
         self.assertIn('aggregated', self.robot.historical_prices)
+
+    def test_build_portfolio(self):
+        """Test building a Portfolio object."""
+
+        # Create a Portfolio
+        porfolio_obj = self.robot.create_portfolio()
+
+        self.assertIsInstance(porfolio_obj, Portfolio)
+
+    def test_build_trade(self):
+        """Test building a Trade object."""
+
+        # Create a Trade
+        trade_obj = self.robot.create_trade(
+            trade_id='long_msft',
+            enter_or_exit='enter',
+            long_or_short='short',
+            order_type='lmt',
+            price=150.00
+        )
+
+        self.assertIsInstance(trade_obj, Trade)
 
     def tearDown(self) -> None:
         """Teardown the Robot."""

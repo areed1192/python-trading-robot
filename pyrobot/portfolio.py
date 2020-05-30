@@ -155,6 +155,11 @@ class Portfolio():
         self.positions[symbol]['purchase_date'] = purchase_date
         self.positions[symbol]['asset_type'] = asset_type
 
+        if purchase_date:
+            self.positions[symbol]['ownership_status'] = True
+        else:
+            self.positions[symbol]['ownership_status'] = False
+
         return self.positions[symbol]
 
     def remove_position(self, symbol: str) -> Tuple[bool,str]:
@@ -338,6 +343,8 @@ class Portfolio():
         portfolio_summary_dict['portfolio_weights'] = self.portfolio_weights()
         portfolio_summary_dict['portfolio_risk'] = ""
 
+        return portfolio_summary_dict
+
     
     def in_portfolio(self, symbol: str) -> bool:
         """checks if the symbol is in the portfolio.
@@ -366,6 +373,44 @@ class Portfolio():
             return True
         else:
             return False
+
+    def get_ownership_status(self, symbol: str) -> bool:
+        """Gets the ownership status for a position in the portfolio.
+
+        Arguments:
+        ----
+        symbol {str} -- The symbol you want to grab the ownership status for.
+
+        Returns:
+        ----
+        {bool} -- `True` if the we own the position, `False` if we do not own it.
+        """ 
+
+        if self.in_portfolio(symbol=symbol) and self.positions[symbol]['ownership_status']:
+            return self.positions[symbol]['ownership_status']
+        else:
+            return False
+
+    def set_ownership_status(self, symbol: str, ownership: bool) -> None:
+        """Sets the ownership status for a position in the portfolio.
+
+        Arguments:
+        ----
+        symbol {str} -- The symbol you want to change the ownership status for.
+        
+        ownership {bool} -- The ownership status you want the symbol to have. Can either
+            be `True` or `False`.
+
+        Raises:
+        ----
+        KeyError: If the symbol does not exist in the portfolio it will return an error.
+        """        
+        
+        if self.in_portfolio(symbol=symbol) and self.positions[symbol]['ownership_status']:
+            self.positions[symbol]['ownership_status'] = ownership
+        else:
+            raise KeyError("Can't set ownership status, as you do not have the symbol in your portfolio.")
+
 
     def is_profitable(self, symbol: str, current_price: float) -> bool:
         """Specifies whether a position is profitable.
