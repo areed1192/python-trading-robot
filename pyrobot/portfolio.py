@@ -366,7 +366,7 @@ class Portfolio():
             )
             >>> in_position_flag = Portfolio.in_portfolio(symbol='MSFT')
             >>> in_position_flag
-            True
+                True
         """
 
         if symbol in self.positions:

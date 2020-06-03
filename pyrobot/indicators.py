@@ -279,6 +279,8 @@ class Indicators():
         ----
         period {int} -- The number of periods to use when calculating the EMA.
 
+        alpha {float} -- The alpha weight used in the calculation. (default: {0.0})
+
         Returns:
         ----
         {pd.DataFrame} -- A Pandas data frame with the EMA indicator included.
@@ -310,6 +312,255 @@ class Indicators():
         )
 
         return self._frame
+
+    def rate_of_change(self, period: int = 1) -> pd.DataFrame:
+        """Calculates the Rate of Change (ROC).
+
+        Arguments:
+        ----
+        period {int} -- The number of periods to use when calculating 
+            the ROC. (default: {1})
+
+        Returns:
+        ----
+        {pd.DataFrame} -- A Pandas data frame with the ROC indicator included.
+
+        Usage:
+        ----
+            >>> historical_prices_df = trading_robot.grab_historical_prices(
+                start=start_date,
+                end=end_date,
+                bar_size=1,
+                bar_type='minute'
+            )
+            >>> price_data_frame = pd.DataFrame(data=historical_prices)
+            >>> indicator_client = Indicators(price_data_frame=price_data_frame)
+            >>> indicator_client.rate_of_change()
+        """
+        locals_data = locals()
+        del locals_data['self']
+
+        column_name = 'rate_of_change'
+        self._current_indicators[column_name] = {}
+        self._current_indicators[column_name]['args'] = locals_data
+        self._current_indicators[column_name]['func'] = self.rate_of_change
+
+        # Add the Momentum indicator.
+        self._frame[column_name] = self._price_groups['close'].transform(
+            lambda x: x.pct_change(periods=period)
+        )
+
+        return self._frame        
+
+    def bollinger_bands(self, period: int = 20) -> pd.DataFrame:
+        """Calculates the Bollinger Bands.
+
+        Arguments:
+        ----
+        period {int} -- The number of periods to use when calculating 
+            the Bollinger Bands. (default: {20})
+
+        Returns:
+        ----
+        {pd.DataFrame} -- A Pandas data frame with the Lower and Upper band
+            indicator included.
+
+        Usage:
+        ----
+            >>> historical_prices_df = trading_robot.grab_historical_prices(
+                start=start_date,
+                end=end_date,
+                bar_size=1,
+                bar_type='minute'
+            )
+            >>> price_data_frame = pd.DataFrame(data=historical_prices)
+            >>> indicator_client = Indicators(price_data_frame=price_data_frame)
+            >>> indicator_client.bollinger_bands()
+        """
+        locals_data = locals()
+        del locals_data['self']
+
+        column_name = 'bollinger_bands'
+        self._current_indicators[column_name] = {}
+        self._current_indicators[column_name]['args'] = locals_data
+        self._current_indicators[column_name]['func'] = self.bollinger_bands
+
+        # Define the Moving Avg.
+        self._frame['moving_avg'] = self._price_groups['close'].transform(
+            lambda x : x.rolling(window=period).mean()
+        )
+
+        # Define Moving Std.
+        self._frame['moving_std'] = self._price_groups['close'].transform(
+            lambda x : x.rolling(window=period).std()
+        )
+
+        # Define the Upper Band.
+        self._frame['band_upper'] = 4 * (self._frame['moving_std'] / self._frame['moving_avg'])
+
+        # Define the lower band
+        self._frame['band_lower'] = (
+            (self._frame['close'] - self._frame['moving_avg']) + 
+            (2 * self._frame['moving_std']) / 
+            (4 * self._frame['moving_std'])
+        )
+
+        # Clean up before sending back.
+        self._frame.drop(
+            labels=['moving_avg', 'moving_std'],
+            axis=1,
+            inplace=True
+        )
+
+        return self._frame   
+
+    def average_true_range(self, period: int = 14) -> pd.DataFrame:
+        """Calculates the Average True Range (ATR).
+
+        Arguments:
+        ----
+        period {int} -- The number of periods to use when calculating 
+            the ATR. (default: {14})
+
+        Returns:
+        ----
+        {pd.DataFrame} -- A Pandas data frame with the ATR included.
+
+        Usage:
+        ----
+            >>> historical_prices_df = trading_robot.grab_historical_prices(
+                start=start_date,
+                end=end_date,
+                bar_size=1,
+                bar_type='minute'
+            )
+            >>> price_data_frame = pd.DataFrame(data=historical_prices)
+            >>> indicator_client = Indicators(price_data_frame=price_data_frame)
+            >>> indicator_client.average_true_range()
+        """
+
+        locals_data = locals()
+        del locals_data['self']
+
+        column_name = 'average_true_range'
+        self._current_indicators[column_name] = {}
+        self._current_indicators[column_name]['args'] = locals_data
+        self._current_indicators[column_name]['func'] = self.average_true_range
+
+
+        # Calculate the different parts of True Range.
+        self._frame['true_range_0'] = abs(self._frame['high'] - self._frame['low'])
+        self._frame['true_range_1'] = abs(self._frame['high'] - self._frame['close'].shift())
+        self._frame['true_range_2'] = abs(self._frame['low'] - self._frame['close'].shift())
+
+        # Grab the Max.
+        self._frame['true_range'] = self._frame[['true_range_0', 'true_range_1', 'true_range_2']].max(axis=1)
+
+        # Calculate the Average True Range.
+        self._frame['average_true_range'] = self._frame['true_range'].transform(
+            lambda x: x.ewm(span = period, min_periods = period).mean()
+        )
+
+        # Clean up before sending back.
+        self._frame.drop(
+            labels=['true_range_0', 'true_range_1', 'true_range_2', 'true_range'],
+            axis=1,
+            inplace=True
+        )
+
+        return self._frame   
+
+    def stochastic_oscillator(self) -> pd.DataFrame:
+        """Calculates the Stochastic Oscillator.
+
+        Returns:
+        ----
+        {pd.DataFrame} -- A Pandas data frame with the Stochastic Oscillator included.
+
+        Usage:
+        ----
+            >>> historical_prices_df = trading_robot.grab_historical_prices(
+                start=start_date,
+                end=end_date,
+                bar_size=1,
+                bar_type='minute'
+            )
+            >>> price_data_frame = pd.DataFrame(data=historical_prices)
+            >>> indicator_client = Indicators(price_data_frame=price_data_frame)
+            >>> indicator_client.stochastic_oscillator()
+        """
+
+        locals_data = locals()
+        del locals_data['self']
+
+        column_name = 'stochastic_oscillator'
+        self._current_indicators[column_name] = {}
+        self._current_indicators[column_name]['args'] = locals_data
+        self._current_indicators[column_name]['func'] = self.stochastic_oscillator
+
+        # Calculate the stochastic_oscillator.
+        self._frame['stochastic_oscillator'] = (
+            self._frame['close'] - self._frame['low'] / 
+            self._frame['high'] - self._frame['low']
+        )
+
+        return self._frame 
+
+    def macd(self, fast_period: int = 12, slow_period: int = 26) -> pd.DataFrame:
+        """Calculates the Moving Average Convergence Divergence (MACD).
+
+        Arguments:
+        ----
+        fast_period {int} -- The number of periods to use when calculating 
+            the fast moving MACD. (default: {12})
+
+        slow_period {int} -- The number of periods to use when calculating 
+            the slow moving MACD. (default: {26})
+
+        Returns:
+        ----
+        {pd.DataFrame} -- A Pandas data frame with the MACD included.
+
+        Usage:
+        ----
+            >>> historical_prices_df = trading_robot.grab_historical_prices(
+                start=start_date,
+                end=end_date,
+                bar_size=1,
+                bar_type='minute'
+            )
+            >>> price_data_frame = pd.DataFrame(data=historical_prices)
+            >>> indicator_client = Indicators(price_data_frame=price_data_frame)
+            >>> indicator_client.macd(fast_period=12, slow_period=26)
+        """
+
+        locals_data = locals()
+        del locals_data['self']
+
+        column_name = 'macd'
+        self._current_indicators[column_name] = {}
+        self._current_indicators[column_name]['args'] = locals_data
+        self._current_indicators[column_name]['func'] = self.macd
+
+        # Calculate the Fast Moving MACD.
+        self._frame['macd_fast'] = self._frame['close'].transform(
+            lambda x: x.ewm(span = fast_period, min_periods = fast_period).mean()
+        )
+
+        # Calculate the Slow Moving MACD.
+        self._frame['macd_slow'] = self._frame['close'].transform(
+            lambda x: x.ewm(span = slow_period, min_periods = slow_period).mean()
+        )
+
+        # Calculate the difference between the fast and the slow.
+        self._frame['macd_diff'] = self._frame['macd_fast'] - self._frame['macd_slow']
+
+        # Calculate the Exponential moving average of the fast.
+        self._frame['macd'] = self._frame['macd_diff'].transform(
+            lambda x: x.ewm(span = 9, min_periods = 8).mean()
+        )
+
+        return self._frame 
 
     def refresh(self):
         """Updates the Indicator columns after adding the new rows."""
