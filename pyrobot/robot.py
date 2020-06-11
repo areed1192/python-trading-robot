@@ -21,11 +21,12 @@ from pyrobot.stock_frame import StockFrame
 from td.client import TDClient
 from td.utils import milliseconds_since_epoch
 
+
 class PyRobot():
 
     def __init__(self, client_id: str, redirect_uri: str, paper_trading: bool = True, credentials_path: Optional[str] = None, trading_account: Optional[str] = None) -> None:
         """Initalizes a new instance of the robot and logs into the API platform specified.
-        
+
         Arguments:
         ----
         client_id {str} -- The Consumer ID assigned to you during the App registration. 
@@ -33,7 +34,7 @@ class PyRobot():
 
         redirect_uri {str} -- This is the redirect URL that you specified when you created your
             TD Ameritrade Application.
-        
+
         Keyword Arguments:
         ----
         credentials_path {str} -- The path to the session state file used to prevent a full 
@@ -59,7 +60,7 @@ class PyRobot():
 
     def _create_session(self) -> TDClient:
         """Start a new session.
-        
+
         Creates a new session with the TD Ameritrade API and logs the user into
         the new session.
 
@@ -71,16 +72,16 @@ class PyRobot():
 
         # Create a new instance of the client
         td_client = TDClient(
-            client_id = self.client_id, 
-            redirect_uri = self.redirect_uri, 
-            credentials_path = self.credentials_path
+            client_id=self.client_id,
+            redirect_uri=self.redirect_uri,
+            credentials_path=self.credentials_path
         )
 
         # log the client into the new session
         td_client.login()
 
         return td_client
-    
+
     @property
     def pre_market_open(self) -> bool:
         """Checks if pre-market is open.
@@ -98,15 +99,27 @@ class PyRobot():
             >>> pre_market_open_flag = trading_robot.pre_market_open
             >>> pre_market_open_flag
             True
-        
+
         Returns:
         ----
         bool -- True if pre-market is open, False otherwise.
 
         """
 
-        pre_market_start_time = datetime.now().replace(hour=12, minute=00, second=00, tzinfo=timezone.utc).timestamp()
-        market_start_time = datetime.now().replace(hour=13, minute=30, second=00, tzinfo=timezone.utc).timestamp()
+        pre_market_start_time = datetime.now().replace(
+            hour=12,
+            minute=00,
+            second=00,
+            tzinfo=timezone.utc
+        ).timestamp()
+
+        market_start_time = datetime.now().replace(
+            hour=13,
+            minute=30,
+            second=00,
+            tzinfo=timezone.utc
+        ).timestamp()
+
         right_now = datetime.now().replace(tzinfo=timezone.utc).timestamp()
 
         if market_start_time >= right_now >= pre_market_start_time:
@@ -131,16 +144,28 @@ class PyRobot():
             >>> post_market_open_flag = trading_robot.post_market_open
             >>> post_market_open_flag
             True
-        
+
         Returns:
         ----
         bool -- True if post-market is open, False otherwise.
 
         """
 
-        post_market_end_time = datetime.now().replace(hour = 22, minute = 30, second = 00, tzinfo = timezone.utc).timestamp()
-        market_end_time = datetime.now().replace(hour = 20, minute = 00, second = 00, tzinfo = timezone.utc).timestamp()
-        right_now = datetime.now().replace(tzinfo = timezone.utc).timestamp()
+        post_market_end_time = datetime.now().replace(
+            hour=22,
+            minute=30,
+            second=00,
+            tzinfo=timezone.utc
+        ).timestamp()
+
+        market_end_time = datetime.now().replace(
+            hour=20,
+            minute=00,
+            second=00,
+            tzinfo=timezone.utc
+        ).timestamp()
+
+        right_now = datetime.now().replace(tzinfo=timezone.utc).timestamp()
 
         if post_market_end_time >= right_now >= market_end_time:
             return True
@@ -164,22 +189,34 @@ class PyRobot():
             >>> market_open_flag = trading_robot.market_open
             >>> market_open_flag
             True
-        
+
         Returns:
         ----
         bool -- True if post-market is open, False otherwise.
 
         """
 
-        market_start_time = datetime.now().replace(hour = 13, minute = 30, second = 00, tzinfo = timezone.utc).timestamp()
-        market_end_time = datetime.now().replace(hour = 20, minute = 00, second = 00, tzinfo = timezone.utc).timestamp()
-        right_now = datetime.now().replace(tzinfo = timezone.utc).timestamp()
+        market_start_time = datetime.now().replace(
+                hour=13,
+                minute=30,
+                second=00,
+                tzinfo=timezone.utc
+        ).timestamp()
+
+        market_end_time = datetime.now().replace(
+            hour=20,
+            minute=00,
+            second=00,
+            tzinfo=timezone.utc
+        ).timestamp()
+
+        right_now = datetime.now().replace(tzinfo=timezone.utc).timestamp()
 
         if market_end_time >= right_now >= market_start_time:
             return True
         else:
             return False
-            
+
     def create_portfolio(self) -> Portfolio:
         """Create a new portfolio.
 
@@ -196,11 +233,11 @@ class PyRobot():
             >>> portfolio = trading_robot.create_portfolio()
             >>> portfolio
             <pyrobot.portfolio.Portfolio object at 0x0392BF88>
-        
+
         Returns:
         ----
         Portfolio -- A pyrobot.Portfolio object with no positions.
-        """  
+        """
 
         # Initalize the portfolio.
         self.portfolio = Portfolio(account_number=self.trading_account)
@@ -210,7 +247,7 @@ class PyRobot():
 
         return self.portfolio
 
-    def create_trade(self, trade_id: str, enter_or_exit: str, long_or_short: str, order_type: str = 'mkt', price: float = 0.0, stop_limit_price = 0.0) -> Trade:
+    def create_trade(self, trade_id: str, enter_or_exit: str, long_or_short: str, order_type: str = 'mkt', price: float = 0.0, stop_limit_price=0.0) -> Trade:
         """Initalizes a new instance of a Trade Object.
 
         This helps simplify the process of building an order by using pre-built templates that can be
@@ -225,19 +262,19 @@ class PyRobot():
 
         long_or_short {str} -- Defines whether this trade will be used to go long or short a position.
             If used to go long, specify `long`. If used to go short, speicfy `short`.
-        
+
         Keyword Arguments:
         ----
         order_type {str} -- Defines the type of order to initalize. Possible values
             are `'mkt', 'lmt', 'stop', 'stop-lmt', 'trailign-stop'` (default: {'mkt'})
-        
+
         price {float} -- The Price to be associate with the order. If the order type is `stop` or `stop-lmt` then 
             it is the stop price, if it is a `lmt` order then it is the limit price, and `mkt` is the market 
             price.(default: {0.0})
 
         stop_limit_price {float} -- Only used if the order is a `stop-lmt` and represents the limit price of
             the `stop-lmt` order. (default: {0.0})
-        
+
         Usage:
         ----
             >>> trading_robot = PyRobot(
@@ -280,7 +317,7 @@ class PyRobot():
                 stop_limit_price=1.90
             )
             >>> new_stop_limit_trade
-        
+
         Returns:
         ----
         Trade -- A pyrobot.Trade object with the specified template.
@@ -288,7 +325,7 @@ class PyRobot():
 
         # Initalize a new trade object.
         trade = Trade()
-        
+
         # Create a new trade.
         trade.new_trade(
             trade_id=trade_id,
@@ -323,8 +360,8 @@ class PyRobot():
                 order_type='mkt'
             )
             >>> trading_robot.delete_trade(index=1)
-        """        
-        
+        """
+
         if index in self.trades:
             del self.trades[index]
 
@@ -404,11 +441,11 @@ class PyRobot():
         symbols = self.portfolio.positions.keys()
 
         # Grab the quotes.
-        quotes = self.session.get_quotes(instruments = list(symbols))
+        quotes = self.session.get_quotes(instruments=list(symbols))
 
         return quotes
 
-    def grab_historical_prices(self, start: datetime, end: datetime, bar_size: int = 1, 
+    def grab_historical_prices(self, start: datetime, end: datetime, bar_size: int = 1,
                                bar_type: str = 'minute', symbols: Optional[List[str]] = None) -> List[dict]:
         """Grabs the historical prices for all the postions in a portfolio.
 
@@ -420,16 +457,16 @@ class PyRobot():
         Arguments:
         ----
         start {datetime} -- Defines the start date for the historical prices.
-        
+
         end {datetime} -- Defines the end date for the historical prices.
 
         Keyword Arguments:
         ----
         bar_size {int} -- Defines the size of each bar. (default: {1})
-        
+
         bar_type {str} -- Defines the bar type, can be one of the following:
             `['minute', 'week', 'month', 'year']` (default: {'minute'})
-        
+
         symbols {List[str]} -- A list of ticker symbols to pull. (default: None)
 
         Returns:
@@ -453,8 +490,8 @@ class PyRobot():
                 )
         """
 
-        self._bar_size = bar_size 
-        self._bar_type = bar_type       
+        self._bar_size = bar_size
+        self._bar_type = bar_type
 
         start = str(milliseconds_since_epoch(dt_object=start))
         end = str(milliseconds_since_epoch(dt_object=end))
@@ -490,8 +527,8 @@ class PyRobot():
                 new_price_mini_dict['volume'] = candle['volume']
                 new_price_mini_dict['datetime'] = candle['datetime']
                 new_prices.append(new_price_mini_dict)
-        
-        self.historical_prices['aggregated']  = new_prices
+
+        self.historical_prices['aggregated'] = new_prices
 
         return self.historical_prices
 
@@ -512,8 +549,8 @@ class PyRobot():
             >>> latest_bars = trading_robot.get_latest_bar()
             >>> latest_bars
 
-        """        
-        
+        """
+
         # Grab the info from the last quest.
         bar_size = self._bar_size
         bar_type = self._bar_type
@@ -524,12 +561,11 @@ class PyRobot():
         start = str(milliseconds_since_epoch(dt_object=start_date))
         end = str(milliseconds_since_epoch(dt_object=end_date))
 
-
         latest_prices = []
 
         # Loop through each symbol.
         for symbol in self.portfolio.positions:
-            
+
             # Grab the request.
             historical_prices_response = self.session.get_price_history(
                 symbol=symbol,
@@ -555,7 +591,7 @@ class PyRobot():
                 new_price_mini_dict['volume'] = candle['volume']
                 new_price_mini_dict['datetime'] = candle['datetime']
                 latest_prices.append(new_price_mini_dict)
-        
+
         return latest_prices
 
     def wait_till_next_bar(self, last_bar_timestamp: pd.DatetimeIndex) -> None:
@@ -564,9 +600,10 @@ class PyRobot():
         Arguments:
         ----
         last_bar_timestamp {pd.DatetimeIndex} -- The last bar's timestamp.
-        """        
+        """
 
-        last_bar_time = last_bar_timestamp.to_pydatetime()[0].replace(tzinfo = timezone.utc)
+        last_bar_time = last_bar_timestamp.to_pydatetime()[
+            0].replace(tzinfo=timezone.utc)
         next_bar_time = last_bar_time + timedelta(seconds=60)
         curr_bar_time = datetime.now(tz=timezone.utc)
 
@@ -583,8 +620,14 @@ class PyRobot():
         print("="*80)
         print("Pausing for the next bar")
         print("-"*80)
-        print("Curr Time: {time_curr}".format(time_curr=curr_bar_time.strftime("%Y-%m-%d %H:%M:%S")))
-        print("Next Time: {time_next}".format(time_next=next_bar_time.strftime("%Y-%m-%d %H:%M:%S")))
+        print("Curr Time: {time_curr}".format(
+                time_curr=curr_bar_time.strftime("%Y-%m-%d %H:%M:%S")
+            )
+        )
+        print("Next Time: {time_next}".format(
+                time_next=next_bar_time.strftime("%Y-%m-%d %H:%M:%S")
+            )
+        )
         print("Sleep Time: {seconds}".format(seconds=time_to_wait_now))
         print("-"*80)
         print('')
@@ -605,9 +648,9 @@ class PyRobot():
 
         # Create the Frame.
         self.stock_frame = StockFrame(data=data)
-        
+
         return self.stock_frame
-    
+
     def execute_signals(self, signals: List[pd.Series], trades_to_execute: dict) -> List[dict]:
         """Executes the specified trades for each signal.
 
@@ -615,7 +658,7 @@ class PyRobot():
         ----
         signals {list} -- A pandas.Series object representing the buy signals and sell signals.
             Will check if series is empty before making any trades.
-        
+
         Trades:
         ----
         trades_to_execute {dict} -- the trades you want to execute if signals are found.
@@ -637,13 +680,13 @@ class PyRobot():
                 signals=signals,
                 trades_to_execute=trades_dict
                 )
-        """        
-        
+        """
+
         buys: pd.Series = signals[0][1]
         sells: pd.Series = signals[1][1]
 
         order_responses = []
-        
+
         # If we have buys or sells continue.
         if not buys.empty:
 
@@ -657,14 +700,17 @@ class PyRobot():
                 if symbol in trades_to_execute:
 
                     if self.portfolio.in_portfolio(symbol=symbol):
-                        self.portfolio.set_ownership_status(symbol=symbol, ownership=True)
+                        self.portfolio.set_ownership_status(
+                            symbol=symbol,
+                            ownership=True
+                        )
 
                     # Set the Execution Flag.
                     trades_to_execute[symbol]['has_executed'] = True
                     trade_obj: Trade = trades_to_execute[symbol]['trade_func']
 
                     if not self.paper_trading:
-                    
+
                         # Execute the order.
                         order_response = self.execute_orders(
                             trade_obj=trade_obj
@@ -677,7 +723,7 @@ class PyRobot():
                         }
 
                         order_responses.append(order_response)
-                    
+
                     else:
 
                         order_response = {
@@ -698,17 +744,20 @@ class PyRobot():
 
                 # Check to see if there is a Trade object.
                 if symbol in trades_to_execute:
-                    
+
                     # Set the Execution Flag.
                     trades_to_execute[symbol]['has_executed'] = True
 
                     if self.portfolio.in_portfolio(symbol=symbol):
-                        self.portfolio.set_ownership_status(symbol=symbol, ownership=False)
+                        self.portfolio.set_ownership_status(
+                            symbol=symbol,
+                            ownership=False
+                        )
 
                     trade_obj: Trade = trades_to_execute[symbol]['trade_func']
 
                     if not self.paper_trading:
-                    
+
                         # Execute the order.
                         order_response = self.execute_orders(
                             trade_obj=trade_obj
@@ -752,7 +801,7 @@ class PyRobot():
 
         Returns:
         ----
-        dict -- An order response dicitonary.
+        {dict} -- An order response dicitonary.
         """
 
         # Execute the order.
@@ -776,8 +825,9 @@ class PyRobot():
         """
 
         # Define the folder.
-        folder: pathlib.PurePath = pathlib.Path(__file__).parents[1].joinpath("data")
-        
+        folder: pathlib.PurePath = pathlib.Path(
+            __file__).parents[1].joinpath("data")
+
         # See if it exist, if not create it.
         if not folder.exists():
             folder.mkdir()
@@ -787,10 +837,10 @@ class PyRobot():
 
         # First check if the file alread exists.
         if file_path.exists():
-            
+
             with open('data/orders.json', 'r') as order_json:
                 orders_list = json.load(order_json)
-        
+
         else:
 
             orders_list = []
