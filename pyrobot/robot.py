@@ -579,6 +579,21 @@ class PyRobot():
 
             # latest_prices.append(historical_prices_response['candles'][-1])
 
+            if 'error' in historical_prices_response:
+                
+                time_true.sleep(2)
+
+                # Grab the request.
+                historical_prices_response = self.session.get_price_history(
+                    symbol=symbol,
+                    period_type='day',
+                    start_date=start,
+                    end_date=end,
+                    frequency_type=bar_type,
+                    frequency=bar_size,
+                    extended_hours=True
+                )               
+
             # parse the candles.
             for candle in historical_prices_response['candles'][-1:]:
 

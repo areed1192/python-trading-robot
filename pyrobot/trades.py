@@ -30,6 +30,7 @@ class Trade():
 
         self._order_response = {}
         self._triggered_added = False
+        self._multi_leg = False
 
     def new_trade(self, trade_id: str, order_type: str, side: str, enter_or_exit: str, price: float = 0.00, stop_limit_price: float = 0.00) -> dict:
         """Creates a new Trade object template.
@@ -52,7 +53,7 @@ class Trade():
         
         Returns:
         ----
-        dict -- [description]
+        {dict} -- [description]
         """
 
         self.trade_id = trade_id
@@ -130,35 +131,37 @@ class Trade():
         if self.side == 'short':
             self.side_opposite == 'long'
 
-    def instrument(self, symbol: str, quantity: int, asset_type: str, sub_asset_type: str = None) -> dict:
+    def instrument(self, symbol: str, quantity: int, asset_type: str, sub_asset_type: str = None, order_leg_id: int = 0) -> dict:
         """Adds an instrument to a trade.
         
         Arguments:
         ----
-        symbol {str} -- [description]
+        symbol {str} -- The instrument ticker symbol.
 
         quantity {int} -- The quantity of shares to be purchased.
         
-        asset_type {str} -- [description]
+        asset_type {str} -- The instrument asset type. For example, `EQUITY`.
         
         Keyword Arguments:
         ----
-        sub_asset_type {str} -- [description] (default: {None})
+        sub_asset_type {str} -- The instrument sub-asset type, not always needed. For example, `ETF`. (default: {None})
         
         Returns:
         ----
-        dict -- [description]
+        {dict} -- A dictionary with the instrument.
         """
 
-        self.order['orderLegCollection'][0]['instrument']['symbol'] = symbol
-        self.order['orderLegCollection'][0]['instrument']['assetType'] = asset_type
-        self.order['orderLegCollection'][0]['quantity'] = quantity
+        leg = self.order['orderLegCollection'][order_leg_id]
+
+        leg['instrument']['symbol'] = symbol
+        leg['instrument']['assetType'] = asset_type
+        leg['quantity'] = quantity
 
         self.order_size = quantity
         self.symbol = symbol
         self.asset_type = asset_type
 
-        return self.order['orderLegCollection'][0]
+        return leg
 
     def good_till_cancel(self, cancel_time: datetime) -> None:
         """Converts an order to a `Good Till Cancel` order.
@@ -172,13 +175,17 @@ class Trade():
         self.order['duration'] = 'GOOD_TILL_CANCEL'
         self.order['cancelTime'] = cancel_time.isoformat()
 
-    def modify_side(self, side: Optional[str]) -> None:
+    def modify_side(self, side: Optional[str] , leg_id: int = 0) -> None:
         """Modifies the Side the order takes.
 
         Arguments:
         ----
         side {str} -- The side to be set. Can be one of the following:
             `['buy', 'sell', 'sell_short', 'buy_to_cover']`.
+        
+        Keyword Arguments:
+        ----
+        leg_id {int} -- The leg you want to adjust. (default: {0})
 
         Raises:
         ----
@@ -192,9 +199,9 @@ class Trade():
         
         # Set the Order.
         if side:
-            self.order['orderLegCollection'][0]['instructions'] = side
+            self.order['orderLegCollection'][leg_id]['instructions'] = side
         else:
-            self.order['orderLegCollection'][0]['instructions'] = self.order_instructions[self.enter_or_exit][self.side_opposite]
+            self.order['orderLegCollection'][leg_id]['instructions'] = self.order_instructions[self.enter_or_exit][self.side_opposite]
 
     def add_box_range(self, profit_size: float = 0.00, percentage: bool = False, stop_limit: bool = False):  
         """Adds a Stop Loss(or  Stop-Limit order), and a limit Order
@@ -236,7 +243,7 @@ class Trade():
 
         Returns:
         ----
-        bool -- `True` if the order was added.
+        {bool} -- `True` if the order was added.
         """
 
         if not self._triggered_added:
@@ -299,7 +306,7 @@ class Trade():
 
         Returns:
         ----
-        bool -- `True` if the order was added.
+        {bool} -- `True` if the order was added.
         """
 
         # Check to see if there is a trigger.
@@ -316,18 +323,34 @@ class Trade():
         # Calculate the Stop Price.
         if stop_percentage:
             adjustment = 1.0 - stop_size
-            stop_price = self._calculate_new_price(price=price, adjustment=adjustment, percentage=True)
+            stop_price = self._calculate_new_price(
+                price=price,
+                adjustment=adjustment,
+                percentage=True
+            )
         else:
             adjustment = -stop_size
-            stop_price = self._calculate_new_price(price=price, adjustment=adjustment, percentage=False)
+            stop_price = self._calculate_new_price(
+                price=price,
+                adjustment=adjustment,
+                percentage=False
+            )
 
         # Calculate the Limit Price.
         if limit_percentage:
             adjustment = 1.0 - limit_size
-            limit_price = self._calculate_new_price(price=price, adjustment=adjustment, percentage=True)
+            limit_price = self._calculate_new_price(
+                price=price,
+                adjustment=adjustment,
+                percentage=True
+            )
         else:
             adjustment = -limit_size
-            limit_price = self._calculate_new_price(price=price, adjustment=adjustment, percentage=False)
+            limit_price = self._calculate_new_price(
+                price=price,
+                adjustment=adjustment,
+                percentage=False
+            )
 
         # Add the order.
         stop_limit_order = {
@@ -368,7 +391,7 @@ class Trade():
 
         Returns:
         ----
-        float -- The new price after the adjustment has been made.
+        {float} -- The new price after the adjustment has been made.
         """        
 
         if percentage:
@@ -401,7 +424,7 @@ class Trade():
 
         Returns:
         ----
-        bool -- `True` if the order was added.
+        {bool} -- `True` if the order was added.
         """        
         
         # Check to see if we have a trigger order.
@@ -547,3 +570,64 @@ class Trade():
 
         else:
             return ""
+
+    def add_leg(self, order_leg_id: int, symbol: str, quantity: int, asset_type: str, sub_asset_type: str = None) -> List[dict]:
+        """Adds an instrument to a trade.
+        
+        Arguments:
+        ----
+        order_leg_id {int} -- The position you want the new leg to be in the leg collection.
+
+        symbol {str} -- The instrument ticker symbol.
+
+        quantity {int} -- The quantity of shares to be purchased.
+        
+        asset_type {str} -- The instrument asset type. For example, `EQUITY`.
+        
+
+        Keyword Arguments:
+        ----
+        sub_asset_type {str} -- The instrument sub-asset type, not always needed. For example, `ETF`. (default: {None})
+        
+
+        Returns:
+        ----
+        {dict} -- The order's order leg collection.
+        """
+
+        # Define the leg.
+        leg = {}
+        leg['instrument']['symbol'] = symbol
+        leg['instrument']['assetType'] = asset_type
+        leg['quantity'] = quantity
+
+        if sub_asset_type:
+            leg['instrument']['subAssetType'] = sub_asset_type
+
+        
+        # If 0, call instrument.
+        if order_leg_id == 0:
+            self.instrument(
+                symbol=symbol,
+                asset_type=asset_type,
+                quantity=quantity,
+                sub_asset_type=sub_asset_type,
+                order_leg_id=0
+            )
+        else:
+            # Insert it.
+            order_leg_colleciton: list = self.order['orderLegCollection']
+            order_leg_colleciton.insert(order_leg_id, leg)
+
+        return self.order['orderLegCollection']
+
+    @property
+    def number_of_legs(self) -> int:
+        """Returns the number of legs in the Order Leg Collection.
+
+        Returns:
+        ----
+        int: The count of legs in the collection.
+        """        
+
+        return len(self.order['orderLegCollection'])
