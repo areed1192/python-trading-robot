@@ -105,10 +105,10 @@ class Trade():
             self.order['stopPrice'] = price
 
         elif self.order['orderType'] == 'TRAILING_STOP':
-            self.order['stopPriceLinkBasis'] == ""
-            self.order['stopPriceLinkType'] == ""
-            self.order['stopPriceOffset'] == 0.00
-            self.order['stopType'] == 'STANDARD'
+            self.order['stopPriceLinkBasis'] = ""
+            self.order['stopPriceLinkType'] = ""
+            self.order['stopPriceOffset'] = 0.00
+            self.order['stopType'] = 'STANDARD'
 
         # Make a refrence to the side we take, useful when adding other components.
         self.enter_or_exit = enter_or_exit
@@ -127,9 +127,9 @@ class Trade():
             self.enter_or_exit_opposite = 'enter'
 
         if self.side == 'long':
-            self.side_opposite == 'short'
+            self.side_opposite = 'short'
         if self.side == 'short':
-            self.side_opposite == 'long'
+            self.side_opposite = 'long'
 
     def instrument(self, symbol: str, quantity: int, asset_type: str, sub_asset_type: str = None, order_leg_id: int = 0) -> dict:
         """Adds an instrument to a trade.
@@ -440,7 +440,7 @@ class Trade():
         
         # Calculate the new price.
         if percentage:
-            adjustment = 1.0 - profit_size
+            adjustment = 1.0 + profit_size
             new_price = self._calculate_new_price(
                 price=price,
                 adjustment=adjustment,
