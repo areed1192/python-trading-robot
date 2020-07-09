@@ -101,7 +101,9 @@ is_msft_porfitable = trading_robot.portfolio.is_profitable(
 print("Is Microsoft Profitable: {answer}".format(answer=is_msft_porfitable))
 
 # Let's get the projected Market Value.
-portfolio_summary = trading_robot.portfolio.projected_market_value(current_prices=current_quotes)
+portfolio_summary = trading_robot.portfolio.projected_market_value(
+    current_prices=current_quotes
+)
 pprint.pprint(portfolio_summary)
 
 # Create a new Trade Object.
@@ -148,7 +150,9 @@ historical_prices = trading_robot.grab_historical_prices(
 )
 
 # Convert data to a Data Frame.
-stock_frame = trading_robot.create_stock_frame(data=historical_prices['aggregated'])
+stock_frame = trading_robot.create_stock_frame(
+    data=historical_prices['aggregated']
+)
 
 # We can also add the stock frame to the Portfolio object.
 trading_robot.portfolio.stock_frame = stock_frame
@@ -210,10 +214,13 @@ while True:
     signals = indicator_client.check_signals()
 
     # Execute Trades.
-    trading_robot.execute_signals(signals=signals, trades_to_execute=trades_dict)
-    
+    trading_robot.execute_signals(
+        signals=signals, trades_to_execute=trades_dict)
+
     # Grab the last bar.
-    last_bar_timestamp = trading_robot.stock_frame.frame.tail(1).index.get_level_values(1)
+    last_bar_timestamp = trading_robot.stock_frame.frame.tail(
+        n=1
+    ).index.get_level_values(1)
 
     # Wait till the next bar.
     trading_robot.wait_till_next_bar(last_bar_timestamp=last_bar_timestamp)
