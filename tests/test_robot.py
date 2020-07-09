@@ -5,6 +5,8 @@ it will test different properties and methods of the object.
 """
 
 import unittest
+import pprint
+
 from unittest import TestCase
 from datetime import datetime
 from datetime import timezone
@@ -55,9 +57,22 @@ class PyRobotTest(TestCase):
     def test_regular_market_open(self):
         """Tests whether Market is Open"""
 
-        right_now = datetime.now().replace(tzinfo = timezone.utc).timestamp()
-        regular_market_start_time = datetime.now().replace(hour = 14, minute = 30, second = 00, tzinfo = timezone.utc).timestamp()
-        regular_market_end_time = datetime.now().replace(hour = 21, minute = 00, second = 00, tzinfo = timezone.utc).timestamp()
+        # Define right now.
+        right_now = datetime.utcnow().timestamp()
+
+        # Define the start time.
+        regular_market_start_time = datetime.utcnow().replace(
+            hour=14,
+            minute=30,
+            second=00
+        ).timestamp()
+
+        # Define the end time.
+        regular_market_end_time = datetime.utcnow().replace(
+            hour=21,
+            minute=00,
+            second=00
+        ).timestamp()
 
         if regular_market_end_time >= right_now >= regular_market_start_time:
             open =  True
@@ -66,26 +81,26 @@ class PyRobotTest(TestCase):
 
         self.assertEqual(open, self.robot.regular_market_open)
 
-        """
-        Pre
-        09:00
-        14:30
-
-        Regular
-        14:30
-        21:00
-
-        Post
-        21:00
-        01:00
-        """
 
     def test_pre_market_open(self):
         """Tests whether US Pre-Market is Open"""
 
-        right_now = datetime.now().replace(tzinfo = timezone.utc).timestamp()
-        pre_market_start_time = datetime.now().replace(hour = 9, minute = 00, second = 00, tzinfo = timezone.utc).timestamp()
-        pre_market_end_time = datetime.now().replace(hour = 14, minute = 30, second = 00, tzinfo = timezone.utc).timestamp()
+        # Define right now.
+        right_now = datetime.utcnow().timestamp()
+
+        # Define the start time.
+        pre_market_start_time = datetime.utcnow().replace(
+            hour=9,
+            minute=00,
+            second=00
+        ).timestamp()
+
+        # Define the end time.
+        pre_market_end_time = datetime.utcnow().replace(
+            hour=14,
+            minute=30,
+            second=00
+        ).timestamp()
 
         if pre_market_end_time >= right_now >= pre_market_start_time:
             open =  True
@@ -97,12 +112,25 @@ class PyRobotTest(TestCase):
     def test_post_market_open(self):
         """Tests whether US Post-Market is Open"""
 
-        right_now = datetime.now().replace(tzinfo = timezone.utc).timestamp()
-        post_market_start_time = datetime.now().replace(hour = 21, minute = 00, second = 00, tzinfo = timezone.utc).timestamp()
-        post_market_end_time = datetime.now().replace(hour = 1, minute = 00, second = 00, tzinfo = timezone.utc).timestamp()
+        # Define right now.
+        right_now = datetime.utcnow().timestamp()
+
+        # Define the start time.
+        post_market_start_time = datetime.utcnow().replace(
+            hour=21,
+            minute=00,
+            second=00
+        ).timestamp()
+
+        # Define the end time.
+        post_market_end_time = datetime.utcnow().replace(
+            hour=1,
+            minute=30,
+            second=00
+        ).timestamp()
 
         if post_market_end_time >= right_now >= post_market_start_time:
-            open =  True
+            open = True
         else:
             open = False
 
@@ -147,6 +175,24 @@ class PyRobotTest(TestCase):
         )
 
         self.assertIsInstance(trade_obj, Trade)
+
+    def test_grab_accounts(self):
+        """Test grabbing accounts using the robot."""
+
+        accounts = self.robot.get_accounts(all_accounts=True)
+
+        pprint.pprint(accounts)
+
+        self.assertIsInstance(accounts, list)
+
+    def test_grab_positions(self):
+        """Test grabbing positions using the robot."""
+
+        positions = self.robot.get_positions(all_accounts=True)
+
+        pprint.pprint(positions)
+
+        self.assertIsInstance(positions, list)
 
     def tearDown(self) -> None:
         """Teardown the Robot."""

@@ -700,6 +700,7 @@ class Trade():
         else:
             return True
 
+    @property
     def is_stop_limit_order(self) -> bool:
         """Specifies whether the order is a Stop Limit Order.
 
@@ -713,6 +714,7 @@ class Trade():
         else:
             return True
 
+    @property
     def is_limit_order(self) -> bool:
         """Specifies whether the order is a Limit Order.
 
