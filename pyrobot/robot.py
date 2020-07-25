@@ -627,11 +627,11 @@ class PyRobot():
         print("Pausing for the next bar")
         print("-"*80)
         print("Curr Time: {time_curr}".format(
-                time_curr=curr_bar_time.strftime("%Y-%m-%d %H:%M:%S")
+            time_curr=curr_bar_time.strftime("%Y-%m-%d %H:%M:%S")
             )
         )
         print("Next Time: {time_next}".format(
-                time_next=next_bar_time.strftime("%Y-%m-%d %H:%M:%S")
+            time_next=next_bar_time.strftime("%Y-%m-%d %H:%M:%S")
             )
         )
         print("Sleep Time: {seconds}".format(seconds=time_to_wait_now))
