@@ -52,7 +52,7 @@ class Portfolio():
 
         Usage:
         ----
-            # Define mutliple positions to add.
+            >>> # Define mutliple positions to add.
             >>> multi_position = [
                 {
                     'asset_type': 'equity',

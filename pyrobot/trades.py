@@ -116,20 +116,37 @@ class Trade():
         self.order_type = order_type
         self.price = price
 
-        if order_type == 'stop' or order_type == 'stop-lmt':
+        # If it's a stop limit order or stop order, set the stop price.
+        if self.is_stop_order or self.is_stop_limit_order:
             self.stop_price = price
         else:
             self.stop_price = 0.0
 
+        # If it's a stop limit order set the stop limit price.
+        if self.is_stop_limit_order:
+            self.stop_limit_price = stop_limit_price
+        else:
+            self.stop_limit_price = 0.0
+
+        # If it's a limit price set the limit price.
+        if self.is_limit_order:
+            self.limit_price = price
+        else:
+            self.limit_price = 0.0
+
+        # Set the enter or exit state.
         if self.enter_or_exit == 'enter':
             self.enter_or_exit_opposite = 'exit'
         if self.enter_or_exit == 'exit':
             self.enter_or_exit_opposite = 'enter'
 
+        # Set the side state.
         if self.side == 'long':
             self.side_opposite = 'short'
         if self.side == 'short':
             self.side_opposite = 'long'
+
+        return self.order
 
     def instrument(self, symbol: str, quantity: int, asset_type: str, sub_asset_type: str = None, order_leg_id: int = 0) -> dict:
         """Adds an instrument to a trade.
@@ -163,6 +180,34 @@ class Trade():
 
         return leg
 
+    def add_option_instrument(self, symbol: str, quantity: int, order_leg_id: int = 0) -> dict:
+        """Adds an Option instrument to the Trade object.
+
+        Args:
+        ----
+        symbol (str): The option symbol to be added.
+        
+        quantity (int): The number of option contracts to purchase or sell.
+
+        order_leg_id (int, optional): The position of the instrument within the
+            the Order Leg Collection.. Defaults to 0.
+
+        Returns:
+        ----
+        dict: The order leg containing the option contract.
+        """
+
+        self.instrument(
+            symbol=symbol,
+            quantity=quantity,
+            asset_type='OPTION',
+            order_leg_id=order_leg_id
+        )
+
+        leg = self.order['orderLegCollection'][order_leg_id]
+        
+        return leg
+
     def good_till_cancel(self, cancel_time: datetime) -> None:
         """Converts an order to a `Good Till Cancel` order.
         
@@ -194,14 +239,16 @@ class Trade():
         """
 
         # Validate the Side.
-        if side and side not in ['buy', 'sell', 'sell_short', 'buy_to_cover']:
-            raise ValueError("The side you have specified is not valid. Please choose a valid side: ['buy', 'sell', 'sell_short', 'buy_to_cover']")
+        if side and side not in ['buy', 'sell', 'sell_short', 'buy_to_cover', 'sell_to_close', 'buy_to_open']:
+            raise ValueError(
+                "The side you have specified is not valid. Please choose a valid side: ['buy', 'sell', 'sell_short', 'buy_to_cover','sell_to_close', 'buy_to_open']"
+            )
         
         # Set the Order.
         if side:
-            self.order['orderLegCollection'][leg_id]['instructions'] = side
+            self.order['orderLegCollection'][leg_id]['instruction'] = side.upper()
         else:
-            self.order['orderLegCollection'][leg_id]['instructions'] = self.order_instructions[self.enter_or_exit][self.side_opposite]
+            self.order['orderLegCollection'][leg_id]['instruction'] = self.order_instructions[self.enter_or_exit][self.side_opposite]
 
     def add_box_range(self, profit_size: float = 0.00, percentage: bool = False, stop_limit: bool = False):  
         """Adds a Stop Loss(or  Stop-Limit order), and a limit Order
@@ -251,7 +298,7 @@ class Trade():
         
         if self.order_type == 'mkt':
             # Have to make a call to Get Quotes.
-            pass
+            price = self.price
         elif self.order_type == 'lmt':
             price = self.price
         
@@ -316,7 +363,8 @@ class Trade():
         # Grab the price.
         if self.order_type == 'mkt':
             # Have to make a call to Get Quotes.
-            pass
+            price = self.price
+            
         elif self.order_type == 'lmt':
             price = self.price
         
@@ -392,7 +440,7 @@ class Trade():
         Returns:
         ----
         {float} -- The new price after the adjustment has been made.
-        """        
+        """
 
         if percentage:
             new_price = price * adjustment
@@ -434,7 +482,7 @@ class Trade():
         # We need to basis to calculate off of. Use the price.
         if self.order_type == 'mkt':
             # Have to make a call to Get Quotes.
-            pass
+            price = self.price
         elif self.order_type == 'lmt':
             price = self.price
         
@@ -584,12 +632,10 @@ class Trade():
         
         asset_type {str} -- The instrument asset type. For example, `EQUITY`.
         
-
         Keyword Arguments:
         ----
         sub_asset_type {str} -- The instrument sub-asset type, not always needed. For example, `ETF`. (default: {None})
         
-
         Returns:
         ----
         {dict} -- The order's order leg collection.
@@ -631,3 +677,77 @@ class Trade():
         """        
 
         return len(self.order['orderLegCollection'])
+
+    def modify_price(self, new_price: float, price_type: str) -> None:
+        """Used to change the price that is specified.
+
+        Arguments:
+        ----
+        new_price (float): The new price to be set.
+        
+        price_type (str): The type of price that should be modified. Can
+            be one of the following: [
+                'price',
+                'stop-price',
+                'limit-price',
+                'stop-limit-stop-price',
+                'stop-limit-limit-price'
+            ]
+        """
+
+        if price_type == 'price':
+            self.order['price'] = new_price
+        elif price_type == 'stop-price' and self.is_stop_order:
+            self.order['stopPrice'] = new_price
+            self.stop_price = new_price
+        elif price_type == 'limit-price' and self.is_limit_order:
+            self.order['price'] = new_price
+            self.price = new_price
+        elif price_type == 'stop-limit-limit-price' and self.is_stop_limit_order:
+            self.order['price'] = new_price
+            self.stop_limit_price = new_price
+        elif price_type == 'stop-limit-stop-price' and self.is_stop_limit_order:
+            self.order['stopPrice'] = new_price
+            self.stop_price = new_price
+
+    @property
+    def is_stop_order(self) -> bool:
+        """Specifies whether the order is a Stop Loss Order.
+
+        Returns:
+        ----
+        bool: `True` if the order is a Stop order, `False` otherwise.
+        """        
+
+        if self.order_type != 'stop':
+            return False
+        else:
+            return True
+
+    @property
+    def is_stop_limit_order(self) -> bool:
+        """Specifies whether the order is a Stop Limit Order.
+
+        Returns:
+        ----
+        bool: `True` if the order is a Stop Limit order, `False` otherwise.
+        """
+
+        if self.order_type != 'stop-lmt':
+            return False
+        else:
+            return True
+
+    @property
+    def is_limit_order(self) -> bool:
+        """Specifies whether the order is a Limit Order.
+
+        Returns:
+        ----
+        bool: `True` if the order is a Limit order, `False` otherwise.
+        """
+
+        if self.order_type != 'lmt':
+            return False
+        else:
+            return True

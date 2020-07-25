@@ -6107,5 +6107,46 @@
             ]
         },
         "timestamp": "2020-06-12T09:09:07.137470"
+    },
+    {
+        "order_id": "MSFT_short_enter_1594053888.673015",
+        "request_body": {
+            "orderStrategyType": "TRIGGER",
+            "orderType": "LIMIT",
+            "session": "AM",
+            "duration": "GOOD_TILL_CANCEL",
+            "orderLegCollection": [
+                {
+                    "instruction": "SELL_SHORT",
+                    "quantity": 2,
+                    "instrument": {
+                        "symbol": "MSFT",
+                        "assetType": "EQUITY"
+                    }
+                }
+            ],
+            "price": 150.0,
+            "cancelTime": "2020-07-06T09:44:38.686107",
+            "childOrderStrategies": [
+                {
+                    "orderType": "STOP",
+                    "session": "NORMAL",
+                    "duration": "DAY",
+                    "stopPrice": 149.9,
+                    "orderStrategyType": "SINGLE",
+                    "orderLegCollection": [
+                        {
+                            "instruction": "BUY_TO_COVER",
+                            "quantity": 2,
+                            "instrument": {
+                                "symbol": "MSFT",
+                                "assetType": "EQUITY"
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        "timestamp": "2020-07-06T09:44:48.673015"
     }
 ]

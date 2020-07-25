@@ -68,7 +68,8 @@ class Indicators():
             return self._indicator_signals
 
     
-    def set_indicator_signal(self, indicator: str, buy: float, sell: float, condition_buy: Any, condition_sell: Any) -> None:
+    def set_indicator_signal(self, indicator: str, buy: float, sell: float, condition_buy: Any, condition_sell: Any, 
+                                buy_max: float = None, sell_max: float = None, condition_buy_max: Any = None, condition_sell_max: Any = None) -> None:
         """Return the raw Pandas Dataframe Object.
 
         Arguments:
@@ -79,11 +80,23 @@ class Indicators():
         
         sell {float} -- The sell signal threshold for the indicator.
 
-        condition_buy {str} -- The operator which is used to evaluate the buy condition. For example, `">"` would
+        condition_buy {str} -- The operator which is used to evaluate the `buy` condition. For example, `">"` would
             represent greater than or from the `operator` module it would represent `operator.gt`.
         
-        condition_buy {str} -- The operator which is used to evaluate the sell condition. For example, `">"` would
+        condition_sell {str} -- The operator which is used to evaluate the `sell` condition. For example, `">"` would
             represent greater than or from the `operator` module it would represent `operator.gt`.
+
+        buy_max {float} -- If the buy threshold has a maximum value that needs to be set, then set the `buy_max` threshold.
+            This means if the signal exceeds this amount it WILL NOT PURCHASE THE INSTRUMENT. (defaults to None).
+        
+        sell_max {float} -- If the sell threshold has a maximum value that needs to be set, then set the `buy_max` threshold.
+            This means if the signal exceeds this amount it WILL NOT SELL THE INSTRUMENT. (defaults to None).
+
+        condition_buy_max {str} -- The operator which is used to evaluate the `buy_max` condition. For example, `">"` would
+            represent greater than or from the `operator` module it would represent `operator.gt`. (defaults to None).
+        
+        condition_sell_max {str} -- The operator which is used to evaluate the `sell_max` condition. For example, `">"` would
+            represent greater than or from the `operator` module it would represent `operator.gt`. (defaults to None).
         """
 
         # Add the key if it doesn't exist.
@@ -95,6 +108,12 @@ class Indicators():
         self._indicator_signals[indicator]['sell'] = sell
         self._indicator_signals[indicator]['buy_operator'] = condition_buy
         self._indicator_signals[indicator]['sell_operator'] = condition_sell
+
+        # Add the max signals
+        self._indicator_signals[indicator]['buy_max'] = buy_max  
+        self._indicator_signals[indicator]['sell_max'] = sell_max
+        self._indicator_signals[indicator]['buy_operator_max'] = condition_buy_max
+        self._indicator_signals[indicator]['sell_operator_max'] = condition_sell_max
 
     @property
     def price_data_frame(self) -> pd.DataFrame:
@@ -561,6 +580,167 @@ class Indicators():
         )
 
         return self._frame 
+
+    def mass_index(self, period: int = 9) -> pd.DataFrame:
+        """Calculates the Mass Index indicator.
+
+        Arguments:
+        ----
+        period {int} -- The number of periods to use when calculating 
+            the mass index. (default: {9})
+
+        Returns:
+        ----
+        {pd.DataFrame} -- A Pandas data frame with the Mass Index included.
+
+        Usage:
+        ----
+            >>> historical_prices_df = trading_robot.grab_historical_prices(
+                start=start_date,
+                end=end_date,
+                bar_size=1,
+                bar_type='minute'
+            )
+            >>> price_data_frame = pd.DataFrame(data=historical_prices)
+            >>> indicator_client = Indicators(price_data_frame=price_data_frame)
+            >>> indicator_client.mass_index(period=9)
+        """
+
+        locals_data = locals()
+        del locals_data['self']
+
+        column_name = 'mass_index'
+        self._current_indicators[column_name] = {}
+        self._current_indicators[column_name]['args'] = locals_data
+        self._current_indicators[column_name]['func'] = self.mass_index
+
+        # Calculate the Diff.
+        self._frame['diff'] = self._frame['high'] - self._frame['low']
+
+        # Calculate Mass Index 1
+        self._frame['mass_index_1'] = self._frame['diff'].transform(
+            lambda x: x.ewm(span = period, min_periods = period - 1).mean()
+        )
+
+        # Calculate Mass Index 2
+        self._frame['mass_index_2'] = self._frame['mass_index_1'].transform(
+            lambda x: x.ewm(span = period, min_periods = period - 1).mean()
+        )
+        
+        # Grab the raw index.
+        self._frame['mass_index_raw'] = self._frame['mass_index_1'] / self._frame['mass_index_2']
+
+        # Calculate the Mass Index.
+        self._frame['mass_index'] = self._frame['mass_index_raw'].transform(
+            lambda x: x.rolling(window=25).sum()
+        )
+
+        # Clean up before sending back.
+        self._frame.drop(
+            labels=['diff', 'mass_index_1', 'mass_index_2', 'mass_index_raw'],
+            axis=1,
+            inplace=True
+        )
+
+        return self._frame
+
+    def kst_oscillator(self, r1: int, r2: int, r3: int, r4: int, n1: int, n2: int, n3: int, n4: int) -> pd.DataFrame:
+        """Calculates the Mass Index indicator.
+
+        Arguments:
+        ----
+        period {int} -- The number of periods to use when calculating 
+            the mass index. (default: {9})
+
+        Returns:
+        ----
+        {pd.DataFrame} -- A Pandas data frame with the Mass Index included.
+
+        Usage:
+        ----
+            >>> historical_prices_df = trading_robot.grab_historical_prices(
+                start=start_date,
+                end=end_date,
+                bar_size=1,
+                bar_type='minute'
+            )
+            >>> price_data_frame = pd.DataFrame(data=historical_prices)
+            >>> indicator_client = Indicators(price_data_frame=price_data_frame)
+            >>> indicator_client.mass_index(period=9)
+        """
+
+        locals_data = locals()
+        del locals_data['self']
+
+        column_name = 'kst_oscillator'
+        self._current_indicators[column_name] = {}
+        self._current_indicators[column_name]['args'] = locals_data
+        self._current_indicators[column_name]['func'] = self.kst_oscillator
+
+        # Calculate the ROC 1.
+        self._frame['roc_1'] = self._frame['close'].diff(r1 - 1)  / self._frame['close'].shift(r1 - 1)
+
+        # Calculate the ROC 2.
+        self._frame['roc_2'] = self._frame['close'].diff(r2 - 1)  / self._frame['close'].shift(r2 - 1)
+
+        # Calculate the ROC 3.
+        self._frame['roc_3'] = self._frame['close'].diff(r3 - 1)  / self._frame['close'].shift(r3 - 1)
+
+        # Calculate the ROC 4.
+        self._frame['roc_4'] = self._frame['close'].diff(r4 - 1)  / self._frame['close'].shift(r4 - 1)
+
+
+        # Calculate the Mass Index.
+        self._frame['roc_1_n'] = self._frame['roc_1'].transform(
+            lambda x: x.rolling(window=n1).sum()
+        )
+
+        # Calculate the Mass Index.
+        self._frame['roc_2_n'] = self._frame['roc_2'].transform(
+            lambda x: x.rolling(window=n2).sum()
+        )
+
+        # Calculate the Mass Index.
+        self._frame['roc_3_n'] = self._frame['roc_3'].transform(
+            lambda x: x.rolling(window=n3).sum()
+        )
+
+        # Calculate the Mass Index.
+        self._frame['roc_4_n'] = self._frame['roc_4'].transform(
+            lambda x: x.rolling(window=n4).sum()
+        )
+
+        self._frame[column_name] = 100 * (self._frame['roc_1_n'] + 2 * self._frame['roc_2_n'] + 3 * self._frame['roc_3_n'] + 4 * self._frame['roc_4_n'])
+        self._frame[column_name + "_signal"] = self._frame['column_name'].transform(
+            lambda x: x.rolling().mean()
+        )
+
+        # Clean up before sending back.
+        self._frame.drop(
+            labels=['roc_1', 'roc_2', 'roc_3', 'roc_4', 'roc_1_n', 'roc_2_n', 'roc_3_n', 'roc_4_n'],
+            axis=1,
+            inplace=True
+        )
+
+        return self._frame
+
+# #KST Oscillator  
+# def KST(df, r1, r2, r3, r4, n1, n2, n3, n4):  
+#     M = df['Close'].diff(r1 - 1)  
+#     N = df['Close'].shift(r1 - 1)  
+#     ROC1 = M / N  
+#     M = df['Close'].diff(r2 - 1)  
+#     N = df['Close'].shift(r2 - 1)  
+#     ROC2 = M / N  
+#     M = df['Close'].diff(r3 - 1)  
+#     N = df['Close'].shift(r3 - 1)  
+#     ROC3 = M / N  
+#     M = df['Close'].diff(r4 - 1)  
+#     N = df['Close'].shift(r4 - 1)  
+#     ROC4 = M / N  
+#     KST = pd.Series(pd.rolling_sum(ROC1, n1) + pd.rolling_sum(ROC2, n2) * 2 + pd.rolling_sum(ROC3, n3) * 3 + pd.rolling_sum(ROC4, n4) * 4, name = 'KST_' + str(r1) + '_' + str(r2) + '_' + str(r3) + '_' + str(r4) + '_' + str(n1) + '_' + str(n2) + '_' + str(n3) + '_' + str(n4))  
+#     df = df.join(KST)  
+#     return df
 
     def refresh(self):
         """Updates the Indicator columns after adding the new rows."""

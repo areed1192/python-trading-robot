@@ -142,7 +142,21 @@ class StockFrame():
 
         Usage:
         ----
-
+            >>> # Create a StockFrame object.
+            >>> stock_frame = trading_robot.create_stock_frame(
+                data=historical_prices['aggregated']
+            )
+            >>> fake_data = {
+                "datetime": 1586390396750,
+                "symbol": "MSFT",
+                "close": 165.7,
+                "open": 165.67,
+                "high": 166.67,
+                "low": 163.5,
+                "volume": 48318234
+            }
+            >>> # Add to the Stock Frame.
+            >>> stock_frame.add_rows(data=fake_data)
         """        
 
         column_names = ['open', 'close', 'high', 'low', 'volume']

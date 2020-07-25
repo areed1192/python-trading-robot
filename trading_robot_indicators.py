@@ -84,6 +84,8 @@ indicator_client.stochastic_oscillator()
 # Add the MACD.
 indicator_client.macd(fast_period=12, slow_period=26)
 
+# Add the Mass Index.
+indicator_client.mass_index(period=9)
 
 while True:
 

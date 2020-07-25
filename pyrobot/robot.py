@@ -106,21 +106,19 @@ class PyRobot():
 
         """
 
-        pre_market_start_time = datetime.now().replace(
-            hour=12,
+        pre_market_start_time = datetime.utcnow().replace(
+            hour=8,
             minute=00,
-            second=00,
-            tzinfo=timezone.utc
+            second=00
         ).timestamp()
 
-        market_start_time = datetime.now().replace(
+        market_start_time = datetime.utcnow().replace(
             hour=13,
             minute=30,
-            second=00,
-            tzinfo=timezone.utc
+            second=00
         ).timestamp()
 
-        right_now = datetime.now().replace(tzinfo=timezone.utc).timestamp()
+        right_now = datetime.utcnow().timestamp()
 
         if market_start_time >= right_now >= pre_market_start_time:
             return True
@@ -151,21 +149,19 @@ class PyRobot():
 
         """
 
-        post_market_end_time = datetime.now().replace(
-            hour=22,
-            minute=30,
-            second=00,
-            tzinfo=timezone.utc
+        post_market_end_time = datetime.utcnow().replace(
+            hour=00,
+            minute=00,
+            second=00
         ).timestamp()
 
-        market_end_time = datetime.now().replace(
+        market_end_time = datetime.utcnow().replace(
             hour=20,
             minute=00,
-            second=00,
-            tzinfo=timezone.utc
+            second=00
         ).timestamp()
 
-        right_now = datetime.now().replace(tzinfo=timezone.utc).timestamp()
+        right_now = datetime.utcnow().timestamp()
 
         if post_market_end_time >= right_now >= market_end_time:
             return True
@@ -196,21 +192,19 @@ class PyRobot():
 
         """
 
-        market_start_time = datetime.now().replace(
-                hour=13,
-                minute=30,
-                second=00,
-                tzinfo=timezone.utc
+        market_start_time = datetime.utcnow().replace(
+            hour=13,
+            minute=30,
+            second=00
         ).timestamp()
 
-        market_end_time = datetime.now().replace(
+        market_end_time = datetime.utcnow().replace(
             hour=20,
             minute=00,
-            second=00,
-            tzinfo=timezone.utc
+            second=00
         ).timestamp()
 
-        right_now = datetime.now().replace(tzinfo=timezone.utc).timestamp()
+        right_now = datetime.utcnow().timestamp()
 
         if market_end_time >= right_now >= market_start_time:
             return True
@@ -548,7 +542,6 @@ class PyRobot():
             )
             >>> latest_bars = trading_robot.get_latest_bar()
             >>> latest_bars
-
         """
 
         # Grab the info from the last quest.
@@ -557,7 +550,7 @@ class PyRobot():
 
         # Define the start and end date.
         start_date = datetime.today()
-        end_date = start_date - timedelta(minutes=15)
+        end_date = start_date - timedelta(minutes=bar_size * 15)
         start = str(milliseconds_since_epoch(dt_object=start_date))
         end = str(milliseconds_since_epoch(dt_object=end_date))
 
@@ -577,10 +570,8 @@ class PyRobot():
                 extended_hours=True
             )
 
-            # latest_prices.append(historical_prices_response['candles'][-1])
-
             if 'error' in historical_prices_response:
-                
+
                 time_true.sleep(2)
 
                 # Grab the request.
@@ -592,7 +583,7 @@ class PyRobot():
                     frequency_type=bar_type,
                     frequency=bar_size,
                     extended_hours=True
-                )               
+                )
 
             # parse the candles.
             for candle in historical_prices_response['candles'][-1:]:
@@ -852,12 +843,9 @@ class PyRobot():
 
         # First check if the file alread exists.
         if file_path.exists():
-
             with open('data/orders.json', 'r') as order_json:
                 orders_list = json.load(order_json)
-
         else:
-
             orders_list = []
 
         # Combine both lists.
@@ -868,3 +856,368 @@ class PyRobot():
             json.dump(obj=orders_list, fp=order_json, indent=4)
 
         return True
+
+    def get_accounts(self, account_number: str = None, all_accounts: bool = False) -> dict:
+        """Returns all the account balances for a specified account.
+
+        Keyword Arguments:
+        ----
+        account_number {str} -- The account number you want to query. (default: {None})
+
+        all_accounts {bool} -- Specifies whether you want to grab all accounts `True` or not
+            `False`. (default: {False})
+
+        Returns:
+        ----
+        Dict -- A dictionary containing all the information in your account.
+
+        Usage:
+        ----
+
+            >>> trading_robot = PyRobot(
+                client_id=CLIENT_ID,
+                redirect_uri=REDIRECT_URI,
+                credentials_path=CREDENTIALS_PATH
+            )
+            >>> trading_robot_accounts = tradeconsole_session.get_accounts(
+                account_number="<YOUR ACCOUNT NUMBER>"
+            )
+            >>> trading_robot_accounts
+            [
+                {
+                    'account_number': 'ACCOUNT_ID',
+                    'account_type': 'CASH',
+                    'available_funds': 0.0,
+                    'buying_power': 0.0,
+                    'cash_available_for_trading': 0.0,
+                    'cash_available_for_withdrawl': 0.0,
+                    'cash_balance': 0.0,
+                    'day_trading_buying_power': 0.0,
+                    'long_market_value': 0.0,
+                    'maintenance_call': 0.0,
+                    'maintenance_requirement': 0.0,
+                    'short_balance': 0.0,
+                    'short_margin_value': 0.0,
+                    'short_market_value': 0.0
+                }
+            ]
+        """
+
+        # Depending on how the client was initalized, either use the state account
+        # or the one passed through the function.
+        if all_accounts:
+            account = 'all'
+        elif self.trading_account:
+            account = self.trading_account
+        else:
+            account = account_number
+
+        # Grab the accounts.
+        accounts = self.session.get_accounts(
+            account=account
+        )
+
+        # Parse the account info.
+        accounts_parsed = self._parse_account_balances(
+            accounts_response=accounts
+        )
+
+        return accounts_parsed
+
+    def _parse_account_balances(self, accounts_response: Union[Dict, List]) -> List[Dict]:
+        """Parses an Account response into a more simplified dictionary.
+
+        Arguments:
+        ----
+        accounts_response {Union[Dict, List]} -- A response from the `get_accounts` call.
+
+        Returns:
+        ----
+        List[Dict] -- A list of simplified account dictionaries.
+        """
+
+        account_lists = []
+
+        if isinstance(accounts_response, dict):
+
+            account_dict = {}
+
+            for account_type_key in accounts_response:
+
+                account_info = accounts_response[account_type_key]
+
+                account_id = account_info['accountId']
+                account_type = account_info['type']
+                account_current_balances = account_info['currentBalances']
+                # account_inital_balances = account_info['initialBalances']
+
+                account_dict['account_number'] = account_id
+                account_dict['account_type'] = account_type
+                account_dict['cash_balance'] = account_current_balances['cashBalance']
+                account_dict['long_market_value'] = account_current_balances['longMarketValue']
+
+                account_dict['cash_available_for_trading'] = account_current_balances.get(
+                    'cashAvailableForTrading', 0.0
+                )
+                account_dict['cash_available_for_withdrawl'] = account_current_balances.get(
+                    'cashAvailableForWithDrawal', 0.0
+                )
+                account_dict['available_funds'] = account_current_balances.get(
+                    'availableFunds', 0.0
+                )
+                account_dict['buying_power'] = account_current_balances.get(
+                    'buyingPower', 0.0
+                )
+                account_dict['day_trading_buying_power'] = account_current_balances.get(
+                    'dayTradingBuyingPower', 0.0
+                )
+                account_dict['maintenance_call'] = account_current_balances.get(
+                    'maintenanceCall', 0.0
+                )
+                account_dict['maintenance_requirement'] = account_current_balances.get(
+                    'maintenanceRequirement', 0.0
+                )
+
+                account_dict['short_balance'] = account_current_balances.get(
+                    'shortBalance', 0.0
+                )
+                account_dict['short_market_value'] = account_current_balances.get(
+                    'shortMarketValue', 0.0
+                )
+                account_dict['short_margin_value'] = account_current_balances.get(
+                    'shortMarginValue', 0.0
+                )
+
+                account_lists.append(account_dict)
+
+        elif isinstance(accounts_response, list):
+
+            for account in accounts_response:
+
+                account_dict = {}
+
+                for account_type_key in account:
+
+                    account_info = account[account_type_key]
+
+                    account_id = account_info['accountId']
+                    account_type = account_info['type']
+                    account_current_balances = account_info['currentBalances']
+                    # account_inital_balances = account_info['initialBalances']
+
+                    account_dict['account_number'] = account_id
+                    account_dict['account_type'] = account_type
+                    account_dict['cash_balance'] = account_current_balances['cashBalance']
+                    account_dict['long_market_value'] = account_current_balances['longMarketValue']
+
+                    account_dict['cash_available_for_trading'] = account_current_balances.get(
+                        'cashAvailableForTrading', 0.0
+                    )
+                    account_dict['cash_available_for_withdrawl'] = account_current_balances.get(
+                        'cashAvailableForWithDrawal', 0.0
+                    )
+                    account_dict['available_funds'] = account_current_balances.get(
+                        'availableFunds', 0.0
+                    )
+                    account_dict['buying_power'] = account_current_balances.get(
+                        'buyingPower', 0.0
+                    )
+                    account_dict['day_trading_buying_power'] = account_current_balances.get(
+                        'dayTradingBuyingPower', 0.0
+                    )
+                    account_dict['maintenance_call'] = account_current_balances.get(
+                        'maintenanceCall', 0.0
+                    )
+                    account_dict['maintenance_requirement'] = account_current_balances.get(
+                        'maintenanceRequirement', 0.0
+                    )
+                    account_dict['short_balance'] = account_current_balances.get(
+                        'shortBalance', 0.0
+                    )
+                    account_dict['short_market_value'] = account_current_balances.get(
+                        'shortMarketValue', 0.0
+                    )
+                    account_dict['short_margin_value'] = account_current_balances.get(
+                        'shortMarginValue', 0.0
+                    )
+
+                    account_lists.append(account_dict)
+
+        return account_lists
+
+    def get_positions(self, account_number: str = None, all_accounts: bool = False) -> List[Dict]:
+        """Gets all the positions for a specified account number.
+
+        Arguments:
+        ----
+        account_number (str, optional): The account number of the account you want
+            to pull positions for. Defaults to None.
+
+        all_accounts (bool, optional): If you want to return all the positions for every
+            account then set to `True`. Defaults to False.
+
+        Returns:
+        ----
+        List[Dict]: A list of Position objects.
+
+        Usage:
+        ----
+
+            >>> trading_robot = PyRobot(
+                client_id=CLIENT_ID,
+                redirect_uri=REDIRECT_URI,
+                credentials_path=CREDENTIALS_PATH
+            )
+            >>> trading_robot_positions = tradeconsole_session.get_positions(
+                account_number="<YOUR ACCOUNT NUMBER>"
+            )
+            >>> trading_robot_positions
+            [
+                {
+                    'account_number': '111111111',
+                    'asset_type': 'EQUITY',
+                    'average_price': 0.00,
+                    'current_day_profit_loss': -0.96,
+                    'current_day_profit_loss_percentage': -5.64,
+                    'cusip': '565849106',
+                    'description': '',
+                    'long_quantity': 3.0,
+                    'market_value': 16.05,
+                    'settled_long_quantity': 3.0,
+                    'settled_short_quantity': 0.0,
+                    'short_quantity': 0.0,
+                    'sub_asset_type': '',
+                    'symbol': 'MRO',
+                    'type': ''
+                },
+                {
+                    'account_number': '111111111',
+                    'asset_type': 'EQUITY',
+                    'average_price': 5.60667,
+                    'current_day_profit_loss': -0.96,
+                    'current_day_profit_loss_percentage': -5.64,
+                    'cusip': '565849106',
+                    'description': '',
+                    'long_quantity': 3.0,
+                    'market_value': 16.05,
+                    'settled_long_quantity': 3.0,
+                    'settled_short_quantity': 0.0,
+                    'short_quantity': 0.0,
+                    'sub_asset_type': '',
+                    'symbol': 'MRO',
+                    'type': ''
+                }
+            ]
+        """
+
+        if all_accounts:
+            account = 'all'
+        elif self.trading_account and account_number is None:
+            account = self.trading_account
+        else:
+            account = account_number
+
+        # Grab the positions.
+        positions = self.session.get_accounts(
+            account=account,
+            fields=['positions']
+        )
+
+        # Parse the positions.
+        positions_parsed = self._parse_account_positions(
+            positions_response=positions
+        )
+
+        return positions_parsed
+
+    def _parse_account_positions(self, positions_response: Union[List, Dict]) -> List[Dict]:
+        """Parses the response from the `get_positions` into a more simplified list.
+
+        Arguments:
+        ----
+        positions_response {Union[List, Dict]} -- Either a list or a dictionary that represents a position.
+
+        Returns:
+        ----
+        List[Dict] -- A more simplified list of positions.
+        """
+
+        positions_lists = []
+
+        if isinstance(positions_response, dict):
+
+            position_dict = {}
+
+            for account_type_key in positions_response:
+
+                account_info = positions_response[account_type_key]
+
+                account_id = account_info['accountId']
+                positions = account_info['positions']
+
+                for position in positions:
+                    position_dict['account_number'] = account_id
+                    position_dict['average_price'] = position['averagePrice']
+                    position_dict['market_value'] = position['marketValue']
+                    position_dict['current_day_profit_loss_percentage'] = position['currentDayProfitLossPercentage']
+                    position_dict['current_day_profit_loss'] = position['currentDayProfitLoss']
+                    position_dict['long_quantity'] = position['longQuantity']
+                    position_dict['short_quantity'] = position['shortQuantity']
+                    position_dict['settled_long_quantity'] = position['settledLongQuantity']
+                    position_dict['settled_short_quantity'] = position['settledShortQuantity']
+
+                    position_dict['symbol'] = position['instrument']['symbol']
+                    position_dict['cusip'] = position['instrument']['cusip']
+                    position_dict['asset_type'] = position['instrument']['assetType']
+                    position_dict['sub_asset_type'] = position['instrument'].get(
+                        'subAssetType', ""
+                    )
+                    position_dict['description'] = position['instrument'].get(
+                        'description', ""
+                    )
+                    position_dict['type'] = position['instrument'].get(
+                        'type', ""
+                    )
+
+                    positions_lists.append(position_dict)
+
+        elif isinstance(positions_response, list):
+
+            for account in positions_response:
+
+                position_dict = {}
+
+                for account_type_key in account:
+
+                    account_info = account[account_type_key]
+
+                    account_id = account_info['accountId']
+                    positions = account_info['positions']
+
+                    for position in positions:
+                        position_dict['account_number'] = account_id
+                        position_dict['average_price'] = position['averagePrice']
+                        position_dict['market_value'] = position['marketValue']
+                        position_dict['current_day_profit_loss_percentage'] = position['currentDayProfitLossPercentage']
+                        position_dict['current_day_profit_loss'] = position['currentDayProfitLoss']
+                        position_dict['long_quantity'] = position['longQuantity']
+                        position_dict['short_quantity'] = position['shortQuantity']
+                        position_dict['settled_long_quantity'] = position['settledLongQuantity']
+                        position_dict['settled_short_quantity'] = position['settledShortQuantity']
+
+                        position_dict['symbol'] = position['instrument']['symbol']
+                        position_dict['cusip'] = position['instrument']['cusip']
+                        position_dict['asset_type'] = position['instrument']['assetType']
+                        position_dict['sub_asset_type'] = position['instrument'].get(
+                            'subAssetType', ""
+                        )
+                        position_dict['description'] = position['instrument'].get(
+                            'description', ""
+                        )
+                        position_dict['type'] = position['instrument'].get(
+                            'type', ""
+                        )
+
+                        positions_lists.append(position_dict)
+
+        return positions_lists
