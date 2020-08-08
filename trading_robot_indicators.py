@@ -87,6 +87,18 @@ indicator_client.macd(fast_period=12, slow_period=26)
 # Add the Mass Index.
 indicator_client.mass_index(period=9)
 
+# Add the K-Oscillator
+indicator_client.kst_oscillator(
+    r1=1,
+    r2=2,
+    r3=3,
+    r4=4,
+    n1=1,
+    n2=2,
+    n3=3,
+    n4=4
+)
+
 while True:
 
     # Grab the latest bar.

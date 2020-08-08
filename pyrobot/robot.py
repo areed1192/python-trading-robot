@@ -3,6 +3,7 @@ import time as time_true
 import pprint
 import pathlib
 import pandas as pd
+import pkg_resources
 
 from datetime import time
 from datetime import datetime
@@ -18,8 +19,15 @@ from pyrobot.trades import Trade
 from pyrobot.portfolio import Portfolio
 from pyrobot.stock_frame import StockFrame
 
+current_td_version = pkg_resources.get_distribution('td-ameritrade-python-api').version
+
 from td.client import TDClient
-from td.utils import milliseconds_since_epoch
+
+if current_td_version == '0.3.0':
+    from td.utils import TDUtilities
+    milliseconds_since_epoch = TDUtilities().milliseconds_since_epoch
+else:
+    from td.utils import milliseconds_since_epoch
 
 
 class PyRobot():

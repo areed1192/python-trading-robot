@@ -643,6 +643,256 @@ class Indicators():
         )
 
         return self._frame
+    
+    def force_index(self, period: int) -> pd.DataFrame:
+        """Calculates the Force Index.
+
+        Arguments:
+        ----
+        period {int} -- The number of periods to use when calculating 
+            the force index.
+
+        Returns:
+        ----
+        {pd.DataFrame} -- A Pandas data frame with the force index included.
+
+        Usage:
+        ----
+            >>> historical_prices_df = trading_robot.grab_historical_prices(
+                start=start_date,
+                end=end_date,
+                bar_size=1,
+                bar_type='minute'
+            )
+            >>> price_data_frame = pd.DataFrame(data=historical_prices)
+            >>> indicator_client = Indicators(price_data_frame=price_data_frame)
+            >>> indicator_client.force_index(period=9)
+        """
+
+        locals_data = locals()
+        del locals_data['self']
+
+        column_name = 'force_index'
+        self._current_indicators[column_name] = {}
+        self._current_indicators[column_name]['args'] = locals_data
+        self._current_indicators[column_name]['func'] = self.force_index
+
+        # Calculate the Force Index.
+        self._frame[column_name] = self._frame['close'].diff(period)  * self._frame['volume'].diff(period)
+
+        return self._frame
+
+    def ease_of_movement(self, period: int) -> pd.DataFrame:
+        """Calculates the Ease of Movement.
+
+        Arguments:
+        ----
+        period {int} -- The number of periods to use when calculating 
+            the Ease of Movement.
+
+        Returns:
+        ----
+        {pd.DataFrame} -- A Pandas data frame with the Ease of Movement included.
+
+        Usage:
+        ----
+            >>> historical_prices_df = trading_robot.grab_historical_prices(
+                start=start_date,
+                end=end_date,
+                bar_size=1,
+                bar_type='minute'
+            )
+            >>> price_data_frame = pd.DataFrame(data=historical_prices)
+            >>> indicator_client = Indicators(price_data_frame=price_data_frame)
+            >>> indicator_client.ease_of_movement(period=9)
+        """
+
+        locals_data = locals()
+        del locals_data['self']
+
+        column_name = 'ease_of_movement'
+        self._current_indicators[column_name] = {}
+        self._current_indicators[column_name]['args'] = locals_data
+        self._current_indicators[column_name]['func'] = self.ease_of_movement
+        
+        # Calculate the ease of movement.
+        high_plus_low = (self._frame['high'].diff(1) + self._frame['low'].diff(1))
+        diff_divi_vol = (self._frame['high'] - self._frame['low']) / (2 * self._frame['volume'])
+        self._frame['ease_of_movement_raw'] = high_plus_low * diff_divi_vol
+
+        # Calculate the Rolling Average of the Ease of Movement.
+        self._frame['ease_of_movement'] = self._frame['ease_of_movement_raw'].transform(
+            lambda x: x.rolling(window=period).mean()
+        )
+
+        # Clean up before sending back.
+        self._frame.drop(
+            labels=['ease_of_movement_raw'],
+            axis=1,
+            inplace=True
+        )
+
+        return self._frame
+
+    def commodity_channel_index(self, period: int) -> pd.DataFrame:
+        """Calculates the Commodity Channel Index.
+
+        Arguments:
+        ----
+        period {int} -- The number of periods to use when calculating 
+            the Commodity Channel Index.
+
+        Returns:
+        ----
+        {pd.DataFrame} -- A Pandas data frame with the Commodity Channel Index included.
+
+        Usage:
+        ----
+            >>> historical_prices_df = trading_robot.grab_historical_prices(
+                start=start_date,
+                end=end_date,
+                bar_size=1,
+                bar_type='minute'
+            )
+            >>> price_data_frame = pd.DataFrame(data=historical_prices)
+            >>> indicator_client = Indicators(price_data_frame=price_data_frame)
+            >>> indicator_client.commodity_channel_index(period=9)
+        """
+
+        locals_data = locals()
+        del locals_data['self']
+
+        column_name = 'commodity_channel_index'
+        self._current_indicators[column_name] = {}
+        self._current_indicators[column_name]['args'] = locals_data
+        self._current_indicators[column_name]['func'] = self.commodity_channel_index
+
+        # Calculate the Typical Price.
+        self._frame['typical_price'] = (self._frame['high'] + self._frame['low'] + self._frame['close']) / 3
+
+        # Calculate the Rolling Average of the Typical Price.
+        self._frame['typical_price_mean'] = self._frame['pp'].transform(
+            lambda x: x.rolling(window=period).mean()
+        )
+
+        # Calculate the Rolling Standard Deviation of the Typical Price.
+        self._frame['typical_price_std'] = self._frame['pp'].transform(
+            lambda x: x.rolling(window=period).std()
+        )
+
+        # Calculate the Commodity Channel Index.
+        self._frame[column_name] = self._frame['typical_price_mean'] / self._frame['typical_price_std']
+
+        # Clean up before sending back.
+        self._frame.drop(
+            labels=['typical_price', 'typical_price_mean', 'typical_price_std'],
+            axis=1,
+            inplace=True
+        )
+
+        return self._frame
+
+    def standard_deviation(self, period: int) -> pd.DataFrame:
+        """Calculates the Standard Deviation.
+
+        Arguments:
+        ----
+        period {int} -- The number of periods to use when calculating 
+            the standard deviation.
+
+        Returns:
+        ----
+        {pd.DataFrame} -- A Pandas data frame with the Standard Deviation included.
+
+        Usage:
+        ----
+            >>> historical_prices_df = trading_robot.grab_historical_prices(
+                start=start_date,
+                end=end_date,
+                bar_size=1,
+                bar_type='minute'
+            )
+            >>> price_data_frame = pd.DataFrame(data=historical_prices)
+            >>> indicator_client = Indicators(price_data_frame=price_data_frame)
+            >>> indicator_client.standard_deviation(period=9)
+        """
+
+        locals_data = locals()
+        del locals_data['self']
+
+        column_name = 'standard_deviation'
+        self._current_indicators[column_name] = {}
+        self._current_indicators[column_name]['args'] = locals_data
+        self._current_indicators[column_name]['func'] = self.standard_deviation
+
+        # Calculate the Standard Deviation.
+        self._frame[column_name] = self._frame['close'].transform(
+            lambda x: x.ewm(span=period).std()
+        )
+
+        return self._frame
+
+    def chaikin_oscillator(self, period: int) -> pd.DataFrame:
+        """Calculates the Chaikin Oscillator.
+
+        Arguments:
+        ----
+        period {int} -- The number of periods to use when calculating 
+            the Chaikin Oscillator.
+
+        Returns:
+        ----
+        {pd.DataFrame} -- A Pandas data frame with the Chaikin Oscillator included.
+
+        Usage:
+        ----
+            >>> historical_prices_df = trading_robot.grab_historical_prices(
+                start=start_date,
+                end=end_date,
+                bar_size=1,
+                bar_type='minute'
+            )
+            >>> price_data_frame = pd.DataFrame(data=historical_prices)
+            >>> indicator_client = Indicators(price_data_frame=price_data_frame)
+            >>> indicator_client.chaikin_oscillator(period=9)
+        """
+
+        locals_data = locals()
+        del locals_data['self']
+
+        column_name = 'chaikin_oscillator'
+        self._current_indicators[column_name] = {}
+        self._current_indicators[column_name]['args'] = locals_data
+        self._current_indicators[column_name]['func'] = self.chaikin_oscillator
+
+        # Calculate the Money Flow Multiplier.
+        money_flow_multiplier_top = 2 * (self._frame['close'] - self._frame['high'] - self._frame['low'])
+        money_flow_multiplier_bot = (self._frame['high'] - self._frame['low'])
+
+        # Calculate Money Flow Volume
+        self._frame['money_flow_volume'] = (money_flow_multiplier_top / money_flow_multiplier_bot) * self._frame['volume']
+
+        # Calculate the 3-Day moving average of the Money Flow Volume.
+        self._frame['money_flow_volume_3'] = self._frame['money_flow_volume'].transform(
+            lambda x: x.ewm(span=3, min_periods=2).mean()
+        )
+
+        # Calculate the 10-Day moving average of the Money Flow Volume.
+        self._frame['money_flow_volume_10'] = self._frame['money_flow_volume'].transform(
+            lambda x: x.ewm(span=10, min_periods=9).mean()
+        )
+
+        # Calculate the Chaikin Oscillator.
+        self._frame[column_name] = self._frame['money_flow_volume_3'] - self._frame['money_flow_volume_10']
+
+        # Clean up before sending back.
+        self._frame.drop(
+            labels=['money_flow_volume_3', 'money_flow_volume_10', 'money_flow_volume'],
+            axis=1,
+            inplace=True
+        )
+
+        return self._frame
 
     def kst_oscillator(self, r1: int, r2: int, r3: int, r4: int, n1: int, n2: int, n3: int, n4: int) -> pd.DataFrame:
         """Calculates the Mass Index indicator.
@@ -714,7 +964,7 @@ class Indicators():
         self._frame[column_name + "_signal"] = self._frame['column_name'].transform(
             lambda x: x.rolling().mean()
         )
-
+        
         # Clean up before sending back.
         self._frame.drop(
             labels=['roc_1', 'roc_2', 'roc_3', 'roc_4', 'roc_1_n', 'roc_2_n', 'roc_3_n', 'roc_4_n'],
@@ -723,6 +973,7 @@ class Indicators():
         )
 
         return self._frame
+
 
 # #KST Oscillator  
 # def KST(df, r1, r2, r3, r4, n1, n2, n3, n4):  
