@@ -215,7 +215,7 @@ while True:
 
     # Execute Trades.
     trading_robot.execute_signals(
-        signals=signals, 
+        signals=signals,
         trades_to_execute=trades_dict
     )
 

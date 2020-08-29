@@ -4,6 +4,7 @@ from typing import List
 from typing import Union
 from typing import Optional
 
+
 class Trade():
 
     """
@@ -18,8 +19,8 @@ class Trade():
     """
 
     def __init__(self):
-        """Initalizes a new order."""            
-        
+        """Initalizes a new order."""
+
         self.order = {}
         self.trade_id = ""
 
@@ -38,7 +39,7 @@ class Trade():
         A trade object is a template that can be used to help build complex trades
         that normally are prone to errors when writing the JSON. Additionally, it
         will help the process of storing trades easier.
-        
+
         Arguments:
         ----
         order_type {str} -- The type of order you would like to create. Can be
@@ -50,7 +51,7 @@ class Trade():
         enter_or_exit {str} -- Specifices whether this trade will enter a new position
             or exit an existing position. If used to enter then specify, 'enter'. If
             used to exit a trade specify, 'exit'.
-        
+
         Returns:
         ----
         {dict} -- [description]
@@ -59,21 +60,21 @@ class Trade():
         self.trade_id = trade_id
 
         self.order_types = {
-            'mkt':'MARKET',
-            'lmt':'LIMIT',
-            'stop':'STOP',
-            'stop_lmt':'STOP_LIMIT',
-            'trailing_stop':'TRAILING_STOP'
+            'mkt': 'MARKET',
+            'lmt': 'LIMIT',
+            'stop': 'STOP',
+            'stop_lmt': 'STOP_LIMIT',
+            'trailing_stop': 'TRAILING_STOP'
         }
 
         self.order_instructions = {
-            'enter':{
-                'long':'BUY',
-                'short':'SELL_SHORT'
+            'enter': {
+                'long': 'BUY',
+                'short': 'SELL_SHORT'
             },
-            'exit':{
-                'long':'SELL',
-                'short':'BUY_TO_COVER'                
+            'exit': {
+                'long': 'SELL',
+                'short': 'BUY_TO_COVER'
             }
         }
 
@@ -150,19 +151,19 @@ class Trade():
 
     def instrument(self, symbol: str, quantity: int, asset_type: str, sub_asset_type: str = None, order_leg_id: int = 0) -> dict:
         """Adds an instrument to a trade.
-        
+
         Arguments:
         ----
         symbol {str} -- The instrument ticker symbol.
 
         quantity {int} -- The quantity of shares to be purchased.
-        
+
         asset_type {str} -- The instrument asset type. For example, `EQUITY`.
-        
+
         Keyword Arguments:
         ----
         sub_asset_type {str} -- The instrument sub-asset type, not always needed. For example, `ETF`. (default: {None})
-        
+
         Returns:
         ----
         {dict} -- A dictionary with the instrument.
@@ -186,7 +187,7 @@ class Trade():
         Args:
         ----
         symbol (str): The option symbol to be added.
-        
+
         quantity (int): The number of option contracts to purchase or sell.
 
         order_leg_id (int, optional): The position of the instrument within the
@@ -205,12 +206,12 @@ class Trade():
         )
 
         leg = self.order['orderLegCollection'][order_leg_id]
-        
+
         return leg
 
     def good_till_cancel(self, cancel_time: datetime) -> None:
         """Converts an order to a `Good Till Cancel` order.
-        
+
         Arguments:
         ----
         cancel_time {datetime.datetime} -- A datetime object representing the
@@ -220,14 +221,14 @@ class Trade():
         self.order['duration'] = 'GOOD_TILL_CANCEL'
         self.order['cancelTime'] = cancel_time.isoformat()
 
-    def modify_side(self, side: Optional[str] , leg_id: int = 0) -> None:
+    def modify_side(self, side: Optional[str], leg_id: int = 0) -> None:
         """Modifies the Side the order takes.
 
         Arguments:
         ----
         side {str} -- The side to be set. Can be one of the following:
             `['buy', 'sell', 'sell_short', 'buy_to_cover']`.
-        
+
         Keyword Arguments:
         ----
         leg_id {int} -- The leg you want to adjust. (default: {0})
@@ -243,14 +244,14 @@ class Trade():
             raise ValueError(
                 "The side you have specified is not valid. Please choose a valid side: ['buy', 'sell', 'sell_short', 'buy_to_cover','sell_to_close', 'buy_to_open']"
             )
-        
+
         # Set the Order.
         if side:
             self.order['orderLegCollection'][leg_id]['instruction'] = side.upper()
         else:
             self.order['orderLegCollection'][leg_id]['instruction'] = self.order_instructions[self.enter_or_exit][self.side_opposite]
 
-    def add_box_range(self, profit_size: float = 0.00, percentage: bool = False, stop_limit: bool = False):  
+    def add_box_range(self, profit_size: float = 0.00, percentage: bool = False, stop_limit: bool = False):
         """Adds a Stop Loss(or  Stop-Limit order), and a limit Order
 
         Arguments:
@@ -263,8 +264,8 @@ class Trade():
         Keyword Arguments:
         ----
         stop_limit {bool} -- If `True` makes the stop-loss a stop-limit. (default: {False})
-        """        
-        
+        """
+
         if not self._triggered_added:
             self._convert_to_trigger()
 
@@ -295,19 +296,21 @@ class Trade():
 
         if not self._triggered_added:
             self._convert_to_trigger()
-        
+
         if self.order_type == 'mkt':
             # Have to make a call to Get Quotes.
             price = self.price
         elif self.order_type == 'lmt':
             price = self.price
-        
+
         if percentage:
             adjustment = 1.0 - stop_size
-            new_price = self._calculate_new_price(price=price, adjustment=adjustment, percentage=True)
+            new_price = self._calculate_new_price(
+                price=price, adjustment=adjustment, percentage=True)
         else:
             adjustment = -stop_size
-            new_price = self._calculate_new_price(price=price, adjustment=adjustment, percentage=False)
+            new_price = self._calculate_new_price(
+                price=price, adjustment=adjustment, percentage=False)
 
         stop_loss_order = {
             "orderType": "STOP",
@@ -359,15 +362,15 @@ class Trade():
         # Check to see if there is a trigger.
         if not self._triggered_added:
             self._convert_to_trigger()
-        
+
         # Grab the price.
         if self.order_type == 'mkt':
             # Have to make a call to Get Quotes.
             price = self.price
-            
+
         elif self.order_type == 'lmt':
             price = self.price
-        
+
         # Calculate the Stop Price.
         if stop_percentage:
             adjustment = 1.0 - stop_size
@@ -405,7 +408,7 @@ class Trade():
             "orderType": "STOP_LIMIT",
             "session": "NORMAL",
             "duration": "DAY",
-            "price":limit_price,
+            "price": limit_price,
             "stopPrice": stop_price,
             "orderStrategyType": "SINGLE",
             "orderLegCollection": [
@@ -423,7 +426,7 @@ class Trade():
         self.stop_limit_order = stop_limit_order
         self.order['childOrderStrategies'].append(self.stop_limit_order)
 
-        return True        
+        return True
 
     def _calculate_new_price(self, price: float, adjustment: float, percentage: bool) -> float:
         """Calculates an adjusted price given an old price.
@@ -431,9 +434,9 @@ class Trade():
         Arguments:
         ----
         price {float} -- The original price.
-        
+
         adjustment {float} -- The adjustment to be made to the new price.
-            
+
         percentage {bool} -- Specifies whether the adjustment is a percentage adjustment `True` or
             an absolute dollar adjustment `False`.
 
@@ -449,12 +452,12 @@ class Trade():
 
         # For orders below $1.00, can only have 4 decimal places.
         if new_price < 1:
-            new_price = round(new_price,4)
+            new_price = round(new_price, 4)
 
         # For orders above $1.00, can only have 2 decimal places.
         else:
             new_price = round(new_price, 2)
-        
+
         return new_price
 
     def add_take_profit(self, profit_size: float, percentage: bool = False) -> bool:
@@ -473,8 +476,8 @@ class Trade():
         Returns:
         ----
         {bool} -- `True` if the order was added.
-        """        
-        
+        """
+
         # Check to see if we have a trigger order.
         if not self._triggered_added:
             self._convert_to_trigger()
@@ -485,7 +488,7 @@ class Trade():
             price = self.price
         elif self.order_type == 'lmt':
             price = self.price
-        
+
         # Calculate the new price.
         if percentage:
             adjustment = 1.0 + profit_size
@@ -535,8 +538,8 @@ class Trade():
         Trigger orders can be used to have a stop loss orders, or take profit orders
         placed right after the main order has been placed. This helps protect the order
         when possible and take profit when thresholds are reached.    
-        """        
-        
+        """
+
         # Only convert to a trigger order, if it already isn't one.
         if self.order and self._triggered_added == False:
             self.order['orderStrategyType'] = 'TRIGGER'
@@ -560,7 +563,7 @@ class Trade():
         2. 'pm' - This is for post-market hours.
         3. 'normal' - This is for normal market hours.
         4. 'seamless' - This makes the order active all of the sessions.
-        
+
         Arguments:
         ----
         session {str} -- The session you want the order to be active. Possible values
@@ -570,8 +573,9 @@ class Trade():
         if session in ['am', 'pm', 'normal', 'seamless']:
             self.order['session'] = session.upper()
         else:
-            raise ValueError('Invalid session, choose either am, pm, normal, or seamless')
-    
+            raise ValueError(
+                'Invalid session, choose either am, pm, normal, or seamless')
+
     @property
     def order_response(self) -> dict:
         """Returns the order response from submitting an order.
@@ -600,11 +604,11 @@ class Trade():
         Returns:
         ----
         {str} -- The order ID that was generated.
-        """        
+        """
 
         # If we have an order, then generate it.
         if self.order:
-            
+
             order_id = "{symbol}_{side}_{enter_or_exit}_{timestamp}"
 
             order_id = order_id.format(
@@ -621,7 +625,7 @@ class Trade():
 
     def add_leg(self, order_leg_id: int, symbol: str, quantity: int, asset_type: str, sub_asset_type: str = None) -> List[dict]:
         """Adds an instrument to a trade.
-        
+
         Arguments:
         ----
         order_leg_id {int} -- The position you want the new leg to be in the leg collection.
@@ -629,13 +633,13 @@ class Trade():
         symbol {str} -- The instrument ticker symbol.
 
         quantity {int} -- The quantity of shares to be purchased.
-        
+
         asset_type {str} -- The instrument asset type. For example, `EQUITY`.
-        
+
         Keyword Arguments:
         ----
         sub_asset_type {str} -- The instrument sub-asset type, not always needed. For example, `ETF`. (default: {None})
-        
+
         Returns:
         ----
         {dict} -- The order's order leg collection.
@@ -650,7 +654,6 @@ class Trade():
         if sub_asset_type:
             leg['instrument']['subAssetType'] = sub_asset_type
 
-        
         # If 0, call instrument.
         if order_leg_id == 0:
             self.instrument(
@@ -674,7 +677,7 @@ class Trade():
         Returns:
         ----
         int: The count of legs in the collection.
-        """        
+        """
 
         return len(self.order['orderLegCollection'])
 
@@ -684,7 +687,7 @@ class Trade():
         Arguments:
         ----
         new_price (float): The new price to be set.
-        
+
         price_type (str): The type of price that should be modified. Can
             be one of the following: [
                 'price',
@@ -717,7 +720,7 @@ class Trade():
         Returns:
         ----
         bool: `True` if the order is a Stop order, `False` otherwise.
-        """        
+        """
 
         if self.order_type != 'stop':
             return False

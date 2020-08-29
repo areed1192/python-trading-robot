@@ -23,8 +23,8 @@ class StockFrame():
         ----
         data {List[Dict]} -- The data to convert to a frame. Normally, this is 
             returned from the historical prices endpoint.
-        """        
-        
+        """
+
         self._data = data
         self._frame: pd.DataFrame = self.create_frame()
         self._symbol_groups = None
@@ -37,7 +37,7 @@ class StockFrame():
         Returns:
         ----
         pd.DataFrame -- A pandas data frame with the price data.
-        """        
+        """
         return self._frame
 
     @property
@@ -53,9 +53,9 @@ class StockFrame():
         Returns:
         ----
         {DataFrameGroupBy} -- A `pandas.core.groupby.GroupBy` object with each symbol.
-        """  
+        """
 
-        # Group by Symbol.   
+        # Group by Symbol.
         self._symbol_groups: DataFrameGroupBy = self._frame.groupby(
             by='symbol',
             as_index=False,
@@ -80,10 +80,10 @@ class StockFrame():
         if not self._symbol_groups:
             self.symbol_groups
 
-        self._symbol_rolling_groups: RollingGroupby = self._symbol_groups.rolling(size)
-        
-        return self._symbol_rolling_groups
+        self._symbol_rolling_groups: RollingGroupby = self._symbol_groups.rolling(
+            size)
 
+        return self._symbol_rolling_groups
 
     def create_frame(self) -> pd.DataFrame:
         """Creates a new data frame with the data passed through.
@@ -91,8 +91,8 @@ class StockFrame():
         Returns:
         ----
         {pd.DataFrame} -- A pandas dataframe.
-        """          
-        
+        """
+
         # Make a data frame.
         price_df = pd.DataFrame(data=self._data)
         price_df = self._parse_datetime_column(price_df=price_df)
@@ -111,12 +111,16 @@ class StockFrame():
         Returns:
         ----
         {pd.DataFrame} -- A pandas dataframe.
-        """     
+        """
 
-        price_df['datetime'] = pd.to_datetime(price_df['datetime'], unit='ms', origin='unix')
+        price_df['datetime'] = pd.to_datetime(
+            price_df['datetime'],
+            unit='ms', 
+            origin='unix'
+        )
 
         return price_df
-    
+
     def _set_multi_index(self, price_df: pd.DataFrame) -> pd.DataFrame:
         """Converts the dataframe to a multi-index data frame.
 
@@ -127,9 +131,9 @@ class StockFrame():
         Returns:
         ----
         pd.DataFrame -- A pandas dataframe.
-        """        
+        """
 
-        price_df = price_df.set_index(keys=['symbol','datetime'])
+        price_df = price_df.set_index(keys=['symbol', 'datetime'])
 
         return price_df
 
@@ -157,7 +161,7 @@ class StockFrame():
             }
             >>> # Add to the Stock Frame.
             >>> stock_frame.add_rows(data=fake_data)
-        """        
+        """
 
         column_names = ['open', 'close', 'high', 'low', 'volume']
 
@@ -183,8 +187,8 @@ class StockFrame():
             ]
 
             # Create a new row.
-            new_row  = pd.Series(data=row_values)
-            
+            new_row = pd.Series(data=row_values)
+
             # Add the row.
             self.frame.loc[row_id, column_names] = new_row.values
 
@@ -192,7 +196,7 @@ class StockFrame():
 
     def do_indicator_exist(self, column_names: List[str]) -> bool:
         """Checks to see if the indicator columns specified exist.
-        
+
         Overview:
         ----
         The user can add multiple indicator columns to their StockFrame object
@@ -217,10 +221,11 @@ class StockFrame():
             return True
         else:
             raise KeyError("The following indicator columns are missing from the StockFrame: {missing_columns}".format(
-                missing_columns=set(column_names).difference(self._frame.columns)
-            )) 
+                missing_columns=set(column_names).difference(
+                    self._frame.columns)
+            ))
 
-    def _check_signals(self, indicators: dict) -> Union[pd.DataFrame, None]:
+    def _check_signals(self, indicators: dict, indciators_comp_key: List[str], indicators_key: List[str]) -> Union[pd.DataFrame, None]:
         """Returns the last row of the StockFrame if conditions are met.
 
         Overview:
@@ -238,21 +243,28 @@ class StockFrame():
         indicators {dict} -- A dictionary containing all the indicators to be checked
             along with their buy and sell criteria.
 
+        indicators_comp_key List[str] -- A list of the indicators where we are comparing
+            one indicator to another indicator.
+
+        indicators_key List[str] -- A list of the indicators where we are comparing
+            one indicator to a numerical value.
+
         Returns:
         ----
         {Union[pd.DataFrame, None]} -- If signals are generated then, a pandas.DataFrame object
             will be returned. If no signals are found then nothing will be returned.
-        """        
+        """
 
         # Grab the last rows.
         last_rows = self._symbol_groups.tail(1)
 
+        # Define a list of conditions.
         conditions = []
 
         # Check to see if all the columns exist.
-        if self.do_indicator_exist(column_names=indicators.keys()):
+        if self.do_indicator_exist(column_names=indicators_key):
 
-            for indicator in indicators:
+            for indicator in indicators_key:
 
                 column = last_rows[indicator]
 
@@ -262,13 +274,54 @@ class StockFrame():
                 buy_condition_operator = indicators[indicator]['buy_operator']
                 sell_condition_operator = indicators[indicator]['sell_operator']
 
-                condition_1: pd.Series = buy_condition_operator(column, buy_condition_target)
-                condition_2: pd.Series = sell_condition_operator(column, sell_condition_target)
+                condition_1: pd.Series = buy_condition_operator(
+                    column, buy_condition_target
+                )
+                condition_2: pd.Series = sell_condition_operator(
+                    column, sell_condition_target
+                )
 
-                condition_1 = condition_1.where(lambda x : x == True).dropna()
-                condition_2 = condition_2.where(lambda x : x == True).dropna()
+                condition_1 = condition_1.where(lambda x: x == True).dropna()
+                condition_2 = condition_2.where(lambda x: x == True).dropna()
 
                 conditions.append(('buys', condition_1))
                 conditions.append(('sells', condition_2))
+            
+        check_indicators = []
+
+        for indicator in indciators_comp_key:
+            parts = indicator.split('_comp_')
+            check_indicators += parts
+
+        if self.do_indicator_exist(column_names=check_indicators):
+
+            for indicator in indciators_comp_key:
+                
+                # Split the indicators.
+                parts = indicator.split('_comp_')
+
+                # Grab the indicators that need to be compared.
+                indicator_1 = last_rows[parts[0]]
+                indicator_2 = last_rows[parts[1]]
+
+                if indicators[indicator]['buy_operator']:
+                    buy_condition_operator = indicators[indicator]['buy_operator']
+
+                    condition_1: pd.Series = buy_condition_operator(
+                        indicator_1, indicator_2
+                    )
+
+                    condition_1 = condition_1.where(lambda x: x == True).dropna()
+                    conditions.append(('buys', condition_1))
+
+                if indicators[indicator]['sell_operator']:
+                    sell_condition_operator = indicators[indicator]['sell_operator']
+
+                    condition_2: pd.Series = sell_condition_operator(
+                        indicator_1, indicator_2
+                    )
+               
+                    condition_2 = condition_2.where(lambda x: x == True).dropna()               
+                    conditions.append(('sells', condition_2))
 
         return conditions

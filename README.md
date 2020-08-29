@@ -9,7 +9,7 @@
 
 ## Overview
 
-Current Version: **0.1.0**
+Current Version: **0.1.1**
 
 A trading robot written in Python that can run automated strategies using a technical analysis.
 The robot is designed to mimic a few common scenarios:

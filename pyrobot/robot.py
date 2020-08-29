@@ -3,7 +3,6 @@ import time as time_true
 import pprint
 import pathlib
 import pandas as pd
-import pkg_resources
 
 from datetime import time
 from datetime import datetime
@@ -19,15 +18,11 @@ from pyrobot.trades import Trade
 from pyrobot.portfolio import Portfolio
 from pyrobot.stock_frame import StockFrame
 
-current_td_version = pkg_resources.get_distribution('td-ameritrade-python-api').version
-
 from td.client import TDClient
+from td.utils import TDUtilities
 
-if current_td_version == '0.3.0':
-    from td.utils import TDUtilities
-    milliseconds_since_epoch = TDUtilities().milliseconds_since_epoch
-else:
-    from td.utils import milliseconds_since_epoch
+# We are going to be doing some timestamp conversions.
+milliseconds_since_epoch = TDUtilities().milliseconds_since_epoch
 
 
 class PyRobot():
@@ -557,8 +552,8 @@ class PyRobot():
         bar_type = self._bar_type
 
         # Define the start and end date.
-        start_date = datetime.today()
-        end_date = start_date - timedelta(minutes=bar_size * 15)
+        end_date = datetime.today()
+        start_date = end_date - timedelta(days=1)
         start = str(milliseconds_since_epoch(dt_object=start_date))
         end = str(milliseconds_since_epoch(dt_object=end_date))
 
@@ -636,11 +631,11 @@ class PyRobot():
         print("-"*80)
         print("Curr Time: {time_curr}".format(
             time_curr=curr_bar_time.strftime("%Y-%m-%d %H:%M:%S")
-            )
+        )
         )
         print("Next Time: {time_next}".format(
             time_next=next_bar_time.strftime("%Y-%m-%d %H:%M:%S")
-            )
+        )
         )
         print("Sleep Time: {seconds}".format(seconds=time_to_wait_now))
         print("-"*80)
@@ -691,8 +686,8 @@ class PyRobot():
                 }
             >>> signals = indicator_client.check_signals()
             >>> trading_robot.execute_signals(
-                signals=signals,
-                trades_to_execute=trades_dict
+                    signals=signals,
+                    trades_to_execute=trades_dict
                 )
         """
 

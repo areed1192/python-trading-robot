@@ -1,4 +1,5 @@
 import pprint
+import operator
 
 from datetime import datetime
 from datetime import timedelta
@@ -89,43 +90,19 @@ indicator_client.macd(fast_period=12, slow_period=26)
 # Add the Mass Index.
 indicator_client.mass_index(period=9)
 
-# # Add the K-Oscillator
-# indicator_client.kst_oscillator(
-#     r1=1,
-#     r2=2,
-#     r3=3,
-#     r4=4,
-#     n1=1,
-#     n2=2,
-#     n3=3,
-#     n4=4
-# )
+# Add a signal to check for.
+indicator_client.set_indicator_signal_compare(
+    indicator_1='sma',
+    indicator_2='ema',
+    condition_buy=operator.ge,
+    condition_sell=None
+)
 
-while True:
+# Check for signals.
+signals = indicator_client.check_signals()
 
-    # Grab the latest bar.
-    latest_bars = trading_robot.get_latest_bar()
+# Print the Head.
+print(trading_robot.stock_frame.frame.head())
 
-    # Add to the Stock Frame.
-    stock_frame.add_rows(data=latest_bars)
-
-    # Refresh the Indicators.
-    indicator_client.refresh()
-
-    print("="*50)
-    print("Current StockFrame")
-    print("-"*50)
-    print(stock_frame.symbol_groups.tail())
-    print("-"*50)
-    print("")
-
-    # Check for signals.
-    signals = indicator_client.check_signals()
-
-    # Grab the last bar.
-    last_bar_timestamp = trading_robot.stock_frame.frame.tail(
-        n=1
-    ).index.get_level_values(1)
-
-    # Wait till the next bar.
-    trading_robot.wait_till_next_bar(last_bar_timestamp=last_bar_timestamp)
+# Print the Signals.
+pprint.pprint(signals)
