@@ -27,7 +27,7 @@ milliseconds_since_epoch = TDUtilities().milliseconds_since_epoch
 
 class PyRobot():
 
-    def __init__(self, client_id: str, redirect_uri: str, paper_trading: bool = True, credentials_path: Optional[str] = None, trading_account: Optional[str] = None) -> None:
+    def __init__(self, client_id: str, redirect_uri: str, paper_trading: bool = True, credentials_path: str = None, trading_account: str = None) -> None:
         """Initalizes a new instance of the robot and logs into the API platform specified.
 
         Arguments:
@@ -443,7 +443,7 @@ class PyRobot():
         return quotes
 
     def grab_historical_prices(self, start: datetime, end: datetime, bar_size: int = 1,
-                               bar_type: str = 'minute', symbols: Optional[List[str]] = None) -> List[dict]:
+                               bar_type: str = 'minute', symbols: List[str] = None) -> List[dict]:
         """Grabs the historical prices for all the postions in a portfolio.
 
         Overview:

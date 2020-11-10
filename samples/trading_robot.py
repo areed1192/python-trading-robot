@@ -172,6 +172,9 @@ indicator_client.rsi(period=14)
 # Add the 200 day simple moving average.
 indicator_client.sma(period=200)
 
+# Add the 200 day simple moving average.
+indicator_client.sma(period=50)
+
 # Add the 50 day exponentials moving average.
 indicator_client.ema(period=50)
 

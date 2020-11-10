@@ -221,7 +221,7 @@ class Trade():
         self.order['duration'] = 'GOOD_TILL_CANCEL'
         self.order['cancelTime'] = cancel_time.isoformat()
 
-    def modify_side(self, side: Optional[str], leg_id: int = 0) -> None:
+    def modify_side(self, side: str, leg_id: int = 0) -> None:
         """Modifies the Side the order takes.
 
         Arguments:

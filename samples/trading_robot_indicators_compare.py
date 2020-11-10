@@ -69,6 +69,9 @@ indicator_client.rsi(period=14)
 # Add the 200 day simple moving average.
 indicator_client.sma(period=200)
 
+# Add the 50 day simple moving average.
+indicator_client.sma(period=50, column_name='sma_50')
+
 # Add the 50 day exponentials moving average.
 indicator_client.ema(period=50)
 
@@ -97,6 +100,17 @@ indicator_client.set_indicator_signal_compare(
     condition_buy=operator.ge,
     condition_sell=None
 )
+
+# Add a signal to check for.
+indicator_client.set_indicator_signal_compare(
+    indicator_1='sma',
+    indicator_2='sma_50',
+    condition_buy=operator.ge,
+    condition_sell=None
+)
+
+# Print the Head.
+print(trading_robot.stock_frame.frame.tail())
 
 # Check for signals.
 signals = indicator_client.check_signals()

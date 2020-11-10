@@ -53,7 +53,7 @@ class Indicators():
         if self.is_multi_index:
             True
 
-    def get_indicator_signal(self, indicator: Optional[str]= None) -> Dict:
+    def get_indicator_signal(self, indicator: str= None) -> Dict:
         """Return the raw Pandas Dataframe Object.
 
         Arguments:
@@ -200,7 +200,7 @@ class Indicators():
         else:
             return False
 
-    def change_in_price(self) -> pd.DataFrame:
+    def change_in_price(self, column_name: str = 'change_in_price') -> pd.DataFrame:
         """Calculates the Change in Price.
 
         Returns:
@@ -210,8 +210,7 @@ class Indicators():
 
         locals_data = locals()
         del locals_data['self']
-
-        column_name = 'change_in_price'
+        
         self._current_indicators[column_name] = {}
         self._current_indicators[column_name]['args'] = locals_data
         self._current_indicators[column_name]['func'] = self.change_in_price
@@ -222,7 +221,7 @@ class Indicators():
 
         return self._frame
 
-    def rsi(self, period: int, method: str = 'wilders') -> pd.DataFrame:
+    def rsi(self, period: int, method: str = 'wilders', column_name: str = 'rsi') -> pd.DataFrame:
         """Calculates the Relative Strength Index (RSI).
 
         Arguments:
@@ -254,7 +253,6 @@ class Indicators():
         locals_data = locals()
         del locals_data['self']
 
-        column_name = 'rsi'
         self._current_indicators[column_name] = {}
         self._current_indicators[column_name]['args'] = locals_data
         self._current_indicators[column_name]['func'] = self.rsi
@@ -301,7 +299,7 @@ class Indicators():
 
         return self._frame
 
-    def sma(self, period: int) -> pd.DataFrame:
+    def sma(self, period: int, column_name: str = 'sma') -> pd.DataFrame:
         """Calculates the Simple Moving Average (SMA).
 
         Arguments:
@@ -328,7 +326,6 @@ class Indicators():
         locals_data = locals()
         del locals_data['self']
 
-        column_name = 'sma'
         self._current_indicators[column_name] = {}
         self._current_indicators[column_name]['args'] = locals_data
         self._current_indicators[column_name]['func'] = self.sma
@@ -340,7 +337,7 @@ class Indicators():
 
         return self._frame
 
-    def ema(self, period: int, alpha: float = 0.0) -> pd.DataFrame:
+    def ema(self, period: int, alpha: float = 0.0, column_name = 'ema') -> pd.DataFrame:
         """Calculates the Exponential Moving Average (EMA).
 
         Arguments:
@@ -369,7 +366,6 @@ class Indicators():
         locals_data = locals()
         del locals_data['self']
 
-        column_name = 'ema'
         self._current_indicators[column_name] = {}
         self._current_indicators[column_name]['args'] = locals_data
         self._current_indicators[column_name]['func'] = self.ema
@@ -381,7 +377,7 @@ class Indicators():
 
         return self._frame
 
-    def rate_of_change(self, period: int = 1) -> pd.DataFrame:
+    def rate_of_change(self, period: int = 1, column_name: str = 'rate_of_change') -> pd.DataFrame:
         """Calculates the Rate of Change (ROC).
 
         Arguments:
@@ -408,7 +404,6 @@ class Indicators():
         locals_data = locals()
         del locals_data['self']
 
-        column_name = 'rate_of_change'
         self._current_indicators[column_name] = {}
         self._current_indicators[column_name]['args'] = locals_data
         self._current_indicators[column_name]['func'] = self.rate_of_change
@@ -420,7 +415,7 @@ class Indicators():
 
         return self._frame        
 
-    def bollinger_bands(self, period: int = 20) -> pd.DataFrame:
+    def bollinger_bands(self, period: int = 20, column_name: str = 'bollinger_bands') -> pd.DataFrame:
         """Calculates the Bollinger Bands.
 
         Arguments:
@@ -448,7 +443,6 @@ class Indicators():
         locals_data = locals()
         del locals_data['self']
 
-        column_name = 'bollinger_bands'
         self._current_indicators[column_name] = {}
         self._current_indicators[column_name]['args'] = locals_data
         self._current_indicators[column_name]['func'] = self.bollinger_bands
@@ -482,7 +476,7 @@ class Indicators():
 
         return self._frame   
 
-    def average_true_range(self, period: int = 14) -> pd.DataFrame:
+    def average_true_range(self, period: int = 14, column_name: str ='average_true_range') -> pd.DataFrame:
         """Calculates the Average True Range (ATR).
 
         Arguments:
@@ -510,7 +504,6 @@ class Indicators():
         locals_data = locals()
         del locals_data['self']
 
-        column_name = 'average_true_range'
         self._current_indicators[column_name] = {}
         self._current_indicators[column_name]['args'] = locals_data
         self._current_indicators[column_name]['func'] = self.average_true_range
@@ -538,7 +531,7 @@ class Indicators():
 
         return self._frame   
 
-    def stochastic_oscillator(self) -> pd.DataFrame:
+    def stochastic_oscillator(self, column_name: str = 'stochastic_oscillator') -> pd.DataFrame:
         """Calculates the Stochastic Oscillator.
 
         Returns:
@@ -561,7 +554,6 @@ class Indicators():
         locals_data = locals()
         del locals_data['self']
 
-        column_name = 'stochastic_oscillator'
         self._current_indicators[column_name] = {}
         self._current_indicators[column_name]['args'] = locals_data
         self._current_indicators[column_name]['func'] = self.stochastic_oscillator
@@ -574,7 +566,7 @@ class Indicators():
 
         return self._frame 
 
-    def macd(self, fast_period: int = 12, slow_period: int = 26) -> pd.DataFrame:
+    def macd(self, fast_period: int = 12, slow_period: int = 26, column_name:str = 'macd') -> pd.DataFrame:
         """Calculates the Moving Average Convergence Divergence (MACD).
 
         Arguments:
@@ -605,7 +597,6 @@ class Indicators():
         locals_data = locals()
         del locals_data['self']
 
-        column_name = 'macd'
         self._current_indicators[column_name] = {}
         self._current_indicators[column_name]['args'] = locals_data
         self._current_indicators[column_name]['func'] = self.macd
@@ -630,7 +621,7 @@ class Indicators():
 
         return self._frame 
 
-    def mass_index(self, period: int = 9) -> pd.DataFrame:
+    def mass_index(self, period: int = 9, column_name: str = 'mass_index') -> pd.DataFrame:
         """Calculates the Mass Index indicator.
 
         Arguments:
@@ -658,7 +649,6 @@ class Indicators():
         locals_data = locals()
         del locals_data['self']
 
-        column_name = 'mass_index'
         self._current_indicators[column_name] = {}
         self._current_indicators[column_name]['args'] = locals_data
         self._current_indicators[column_name]['func'] = self.mass_index
@@ -693,7 +683,7 @@ class Indicators():
 
         return self._frame
     
-    def force_index(self, period: int) -> pd.DataFrame:
+    def force_index(self, period: int, column_name: str = 'force_index') -> pd.DataFrame:
         """Calculates the Force Index.
 
         Arguments:
@@ -721,7 +711,6 @@ class Indicators():
         locals_data = locals()
         del locals_data['self']
 
-        column_name = 'force_index'
         self._current_indicators[column_name] = {}
         self._current_indicators[column_name]['args'] = locals_data
         self._current_indicators[column_name]['func'] = self.force_index
@@ -731,7 +720,7 @@ class Indicators():
 
         return self._frame
 
-    def ease_of_movement(self, period: int) -> pd.DataFrame:
+    def ease_of_movement(self, period: int, column_name: str = 'ease_of_movement') -> pd.DataFrame:
         """Calculates the Ease of Movement.
 
         Arguments:
@@ -759,7 +748,6 @@ class Indicators():
         locals_data = locals()
         del locals_data['self']
 
-        column_name = 'ease_of_movement'
         self._current_indicators[column_name] = {}
         self._current_indicators[column_name]['args'] = locals_data
         self._current_indicators[column_name]['func'] = self.ease_of_movement
@@ -783,7 +771,7 @@ class Indicators():
 
         return self._frame
 
-    def commodity_channel_index(self, period: int) -> pd.DataFrame:
+    def commodity_channel_index(self, period: int, column_name: str = 'commodity_channel_index') -> pd.DataFrame:
         """Calculates the Commodity Channel Index.
 
         Arguments:
@@ -811,7 +799,6 @@ class Indicators():
         locals_data = locals()
         del locals_data['self']
 
-        column_name = 'commodity_channel_index'
         self._current_indicators[column_name] = {}
         self._current_indicators[column_name]['args'] = locals_data
         self._current_indicators[column_name]['func'] = self.commodity_channel_index
@@ -841,7 +828,7 @@ class Indicators():
 
         return self._frame
 
-    def standard_deviation(self, period: int) -> pd.DataFrame:
+    def standard_deviation(self, period: int, column_name: str = 'standard_deviation') -> pd.DataFrame:
         """Calculates the Standard Deviation.
 
         Arguments:
@@ -869,7 +856,6 @@ class Indicators():
         locals_data = locals()
         del locals_data['self']
 
-        column_name = 'standard_deviation'
         self._current_indicators[column_name] = {}
         self._current_indicators[column_name]['args'] = locals_data
         self._current_indicators[column_name]['func'] = self.standard_deviation
@@ -881,7 +867,7 @@ class Indicators():
 
         return self._frame
 
-    def chaikin_oscillator(self, period: int) -> pd.DataFrame:
+    def chaikin_oscillator(self, period: int, column_name: str = 'chaikin_oscillator') -> pd.DataFrame:
         """Calculates the Chaikin Oscillator.
 
         Arguments:
@@ -909,7 +895,6 @@ class Indicators():
         locals_data = locals()
         del locals_data['self']
 
-        column_name = 'chaikin_oscillator'
         self._current_indicators[column_name] = {}
         self._current_indicators[column_name]['args'] = locals_data
         self._current_indicators[column_name]['func'] = self.chaikin_oscillator
@@ -943,7 +928,7 @@ class Indicators():
 
         return self._frame
 
-    def kst_oscillator(self, r1: int, r2: int, r3: int, r4: int, n1: int, n2: int, n3: int, n4: int) -> pd.DataFrame:
+    def kst_oscillator(self, r1: int, r2: int, r3: int, r4: int, n1: int, n2: int, n3: int, n4: int, column_name: str = 'kst_oscillator') -> pd.DataFrame:
         """Calculates the Mass Index indicator.
 
         Arguments:
@@ -971,7 +956,6 @@ class Indicators():
         locals_data = locals()
         del locals_data['self']
 
-        column_name = 'kst_oscillator'
         self._current_indicators[column_name] = {}
         self._current_indicators[column_name]['args'] = locals_data
         self._current_indicators[column_name]['func'] = self.kst_oscillator
