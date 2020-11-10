@@ -148,18 +148,25 @@ class Portfolio():
                 'purchase_date': '2020-01-31'
             }
         """
+        if symbol not in self.positions:
+            self.positions[symbol] = {}
+            self.positions[symbol]['symbol'] = symbol
+            self.positions[symbol]['quantity'] = quantity
+            self.positions[symbol]['purchase_price'] = purchase_price
+            self.positions[symbol]['purchase_date'] = purchase_date
+            self.positions[symbol]['asset_type'] = asset_type
 
-        self.positions[symbol] = {}
-        self.positions[symbol]['symbol'] = symbol
-        self.positions[symbol]['quantity'] = quantity
-        self.positions[symbol]['purchase_price'] = purchase_price
-        self.positions[symbol]['purchase_date'] = purchase_date
-        self.positions[symbol]['asset_type'] = asset_type
-
-        if purchase_date:
-            self.positions[symbol]['ownership_status'] = True
+            if purchase_date:
+                self.positions[symbol]['ownership_status'] = True
+            else:
+                self.positions[symbol]['ownership_status'] = False
         else:
-            self.positions[symbol]['ownership_status'] = False
+            orig_price = self.positions[symbol].get('purchase_price', 0.00)
+            orig_quant = self.positions[symbol].get('quantity', 0)
+            avg_price = (orig_price*orig_quant + purchase_price*quantity) / (orig_quant + quantity)
+            new_quant = orig_quant + quantity
+            self.positions[symbol]['purchase_price'] = avg_price
+            self.positions[symbol]['quantity'] = new_quant
 
         return self.positions[symbol]
 
