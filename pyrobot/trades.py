@@ -1,10 +1,10 @@
+import json
 from datetime import datetime
 
 from typing import List
 from typing import Dict
 
 from td.client import TDClient
-from pyrobot.order_status import OrderStatus
 
 
 class Trade():
@@ -39,6 +39,19 @@ class Trade():
         self._multi_leg = False
         self._one_cancels_other = False
         self._td_client: TDClient = None
+    
+    def to_dict(self) -> dict:
+
+        # Initialize the Dict.
+        obj_dict = {
+            "__class___": self.__class__.__name__,
+            "__module___": self.__module__
+        }
+
+        # Add the Object.
+        obj_dict.update(self.__dict__)
+
+        return obj_dict
     
     def new_trade(self, trade_id: str, order_type: str, side: str, enter_or_exit: str, price: float = 0.00, stop_limit_price: float = 0.00) -> dict:
         """Creates a new Trade object template.
@@ -848,7 +861,7 @@ class Trade():
             self.order_response = order_response
             self.order_status = self.order_response['status']
     
-    def check_status(self) -> OrderStatus:
+    def check_status(self) -> object:
         """Used to easily identify the order status.
 
         Returns
@@ -856,7 +869,9 @@ class Trade():
         OrderStatus
             An order status object that provides simple
             properties to grab the order status.
-        """        
+        """
+
+        from pyrobot.order_status import OrderStatus
 
         return OrderStatus(trade_obj=self)
 

@@ -338,3 +338,50 @@ class StockFrame():
                     conditions.append(('sells', condition_2))
 
         return conditions
+
+    def grab_current_bar(self, symbol: str) -> pd.Series:
+        """Grabs the current trading bar.
+
+        ### Parameters
+        ----------
+        symbol : str
+            The symbol to grab the latest
+            bar for.
+
+        ### Returns
+        -------
+        pd.Series
+            A candle bar, represented as a
+            pandas series object.
+        """        
+
+        # Filter the Stock Frame.
+        bars_filtered = self._frame.filter(like=symbol, axis=0)
+        bars = bars_filtered.tail(1)
+
+        return bars
+
+    def grab_n_bars_ago(self, symbol: str, n: int) -> pd.Series:
+        """Grabs the current trading bar.
+
+        ### Parameters
+        ----------
+        symbol : str
+            The symbol to grab the latest
+            bar for.
+
+        n : str
+            The number of bars to look back.
+
+        ### Returns
+        -------
+        pd.Series
+            A candle bar, represented as a
+            pandas series object.
+        """        
+
+        # Filter the Stock Frame.
+        bars_filtered = self._frame.filter(like=symbol, axis=0)
+        bars = bars_filtered.iloc[-n]
+
+        return bars
