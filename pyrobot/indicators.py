@@ -1,17 +1,11 @@
-import operator
 import numpy as np
 import pandas as pd
 
 from typing import Any
-from typing import List
 from typing import Dict
-from typing import Tuple
 from typing import Union
-from typing import Optional
-from typing import Iterable
 
 from pyrobot.stock_frame import StockFrame
-
 
 class Indicators():
 
@@ -71,7 +65,7 @@ class Indicators():
             return self._indicator_signals
     
     def set_indicator_signal(self, indicator: str, buy: float, sell: float, condition_buy: Any, condition_sell: Any, 
-                            buy_max: float = None, sell_max: float = None, condition_buy_max: Any = None, condition_sell_max: Any = None) -> None:
+                             buy_max: float = None, sell_max: float = None, condition_buy_max: Any = None, condition_sell_max: Any = None) -> None:
         """Used to set an indicator where one indicator crosses above or below a certain numerical threshold.
 
         Arguments:
@@ -155,14 +149,13 @@ class Indicators():
 
         # Grab the dictionary.
         indicator_dict = self._indicator_signals[key]
-        
+
         # Add the signals.
         indicator_dict['type'] = 'comparison'
         indicator_dict['indicator_1'] = indicator_1
         indicator_dict['indicator_2'] = indicator_2
         indicator_dict['buy_operator'] = condition_buy
         indicator_dict['sell_operator'] = condition_sell
-
 
     @property
     def price_data_frame(self) -> pd.DataFrame:
@@ -529,7 +522,7 @@ class Indicators():
             inplace=True
         )
 
-        return self._frame   
+        return self._frame
 
     def stochastic_oscillator(self, column_name: str = 'stochastic_oscillator') -> pd.DataFrame:
         """Calculates the Stochastic Oscillator.
@@ -566,7 +559,7 @@ class Indicators():
 
         return self._frame 
 
-    def macd(self, fast_period: int = 12, slow_period: int = 26, column_name:str = 'macd') -> pd.DataFrame:
+    def macd(self, fast_period: int = 12, slow_period: int = 26, column_name: str = 'macd') -> pd.DataFrame:
         """Calculates the Moving Average Convergence Divergence (MACD).
 
         Arguments:
@@ -1007,25 +1000,6 @@ class Indicators():
 
         return self._frame
 
-
-# #KST Oscillator  
-# def KST(df, r1, r2, r3, r4, n1, n2, n3, n4):  
-#     M = df['Close'].diff(r1 - 1)  
-#     N = df['Close'].shift(r1 - 1)  
-#     ROC1 = M / N  
-#     M = df['Close'].diff(r2 - 1)  
-#     N = df['Close'].shift(r2 - 1)  
-#     ROC2 = M / N  
-#     M = df['Close'].diff(r3 - 1)  
-#     N = df['Close'].shift(r3 - 1)  
-#     ROC3 = M / N  
-#     M = df['Close'].diff(r4 - 1)  
-#     N = df['Close'].shift(r4 - 1)  
-#     ROC4 = M / N  
-#     KST = pd.Series(pd.rolling_sum(ROC1, n1) + pd.rolling_sum(ROC2, n2) * 2 + pd.rolling_sum(ROC3, n3) * 3 + pd.rolling_sum(ROC4, n4) * 4, name = 'KST_' + str(r1) + '_' + str(r2) + '_' + str(r3) + '_' + str(r4) + '_' + str(n1) + '_' + str(n2) + '_' + str(n3) + '_' + str(n4))  
-#     df = df.join(KST)  
-#     return df
-
     def refresh(self):
         """Updates the Indicator columns after adding the new rows."""
 
@@ -1064,3 +1038,23 @@ class Indicators():
 
         return signals_df
 
+
+# #KST Oscillator  
+# def KST(df, r1, r2, r3, r4, n1, n2, n3, n4):  
+#     M = df['Close'].diff(r1 - 1)  
+#     N = df['Close'].shift(r1 - 1)  
+#     ROC1 = M / N  
+#     M = df['Close'].diff(r2 - 1)  
+#     N = df['Close'].shift(r2 - 1)  
+#     ROC2 = M / N  
+#     M = df['Close'].diff(r3 - 1)  
+#     N = df['Close'].shift(r3 - 1)  
+#     ROC3 = M / N  
+#     M = df['Close'].diff(r4 - 1)  
+#     N = df['Close'].shift(r4 - 1)  
+#     ROC4 = M / N  
+#     KST = pd.Series(pd.rolling_sum(ROC1, n1) + pd.rolling_sum(ROC2, n2) * 2 + pd.rolling_sum(ROC3, n3) * 3 +
+#  pd.rolling_sum(ROC4, n4) * 4, name = 'KST_' + str(r1) + '_' + str(r2) + '_' + str(r3) + '_' + str(r4) + '_' +
+#  str(n1) + '_' + str(n2) + '_' + str(n3) + '_' + str(n4))  
+#     df = df.join(KST)  
+#     return df

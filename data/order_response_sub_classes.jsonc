@@ -1,0 +1,73 @@
+//The class <Instrument> has the
+//following subclasses:
+//-Equity
+//-FixedIncome
+//-MutualFund
+//-CashEquivalent
+//-Option
+//-OrderActivity
+
+{
+  "equity": {
+    "assetType": "'EQUITY' or 'OPTION' or 'INDEX' or 'MUTUAL_FUND' or 'CASH_EQUIVALENT' or 'FIXED_INCOME' or 'CURRENCY'",
+    "cusip": "string",
+    "symbol": "string",
+    "description": "string"
+  },
+  "fixed_income": {
+    "assetType": "'EQUITY' or 'OPTION' or 'INDEX' or 'MUTUAL_FUND' or 'CASH_EQUIVALENT' or 'FIXED_INCOME' or 'CURRENCY'",
+    "cusip": "string",
+    "symbol": "string",
+    "description": "string",
+    "maturityDate": "string",
+    "variableRate": 0,
+    "factor": 0
+  },
+  "mutual_fund": {
+    "assetType": "'EQUITY' or 'OPTION' or 'INDEX' or 'MUTUAL_FUND' or 'CASH_EQUIVALENT' or 'FIXED_INCOME' or 'CURRENCY'",
+    "cusip": "string",
+    "symbol": "string",
+    "description": "string",
+    "type": "'NOT_APPLICABLE' or 'OPEN_END_NON_TAXABLE' or 'OPEN_END_TAXABLE' or 'NO_LOAD_NON_TAXABLE' or 'NO_LOAD_TAXABLE'"
+  },
+  "cash_equivalent": {
+    "assetType": "'EQUITY' or 'OPTION' or 'INDEX' or 'MUTUAL_FUND' or 'CASH_EQUIVALENT' or 'FIXED_INCOME' or 'CURRENCY'",
+    "cusip": "string",
+    "symbol": "string",
+    "description": "string",
+    "type": "'SAVINGS' or 'MONEY_MARKET_FUND'"
+  },
+  "option": {
+    "assetType": "'EQUITY' or 'OPTION' or 'INDEX' or 'MUTUAL_FUND' or 'CASH_EQUIVALENT' or 'FIXED_INCOME' or 'CURRENCY'",
+    "cusip": "string",
+    "symbol": "string",
+    "description": "string",
+    "type": "'VANILLA' or 'BINARY' or 'BARRIER'",
+    "putCall": "'PUT' or 'CALL'",
+    "underlyingSymbol": "string",
+    "optionMultiplier": 0,
+    "optionDeliverables": [
+      {
+        "symbol": "string",
+        "deliverableUnits": 0,
+        "currencyType": "'USD' or 'CAD' or 'EUR' or 'JPY'",
+        "assetType": "'EQUITY' or 'OPTION' or 'INDEX' or 'MUTUAL_FUND' or 'CASH_EQUIVALENT' or 'FIXED_INCOME' or 'CURRENCY'"
+      }
+    ]
+  },
+  "order_acitivity": {
+    "activityType": "'EXECUTION' or 'ORDER_ACTION'",
+    "executionType": "'FILL'",
+    "quantity": 0,
+    "orderRemainingQuantity": 0,
+    "executionLegs": [
+      {
+        "legId": 0,
+        "quantity": 0,
+        "mismarkedQuantity": 0,
+        "price": 0,
+        "time": "string"
+      }
+    ]
+  }
+}

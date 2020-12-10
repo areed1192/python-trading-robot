@@ -24,7 +24,7 @@ setup(
     url='https://github.com/areed1192/python-trading-robot',
 
     install_requires=[
-        'td-ameritrade-python-api==0.3.0',
+        'td-ameritrade-python-api>=0.3.0',
         'pandas==1.0.5',
         'numpy==1.19.0'
     ],

@@ -1,9 +1,4 @@
-import numpy as np
 import pandas as pd
-
-from datetime import time
-from datetime import datetime
-from datetime import timezone
 
 from typing import List
 from typing import Dict
@@ -81,7 +76,8 @@ class StockFrame():
             self.symbol_groups
 
         self._symbol_rolling_groups: RollingGroupby = self._symbol_groups.rolling(
-            size)
+            size
+        )
 
         return self._symbol_rolling_groups
 
@@ -268,6 +264,7 @@ class StockFrame():
 
                 column = last_rows[indicator]
 
+                # Grab the Buy & Sell Condition.
                 buy_condition_target = indicators[indicator]['buy']
                 sell_condition_target = indicators[indicator]['sell']
 
@@ -286,9 +283,11 @@ class StockFrame():
 
                 conditions.append(('buys', condition_1))
                 conditions.append(('sells', condition_2))
-            
+        
+        # Store the indicators in a list.
         check_indicators = []
-
+        
+        # Split the name so we can check if the indicator exist.
         for indicator in indciators_comp_key:
             parts = indicator.split('_comp_')
             check_indicators += parts
@@ -304,24 +303,38 @@ class StockFrame():
                 indicator_1 = last_rows[parts[0]]
                 indicator_2 = last_rows[parts[1]]
 
+                # If we have a buy operator, grab it.
                 if indicators[indicator]['buy_operator']:
+
+                    # Grab the Buy Operator.
                     buy_condition_operator = indicators[indicator]['buy_operator']
 
+                    # Grab the Condition.
                     condition_1: pd.Series = buy_condition_operator(
                         indicator_1, indicator_2
                     )
 
+                    # Keep the one's that aren't null.
                     condition_1 = condition_1.where(lambda x: x == True).dropna()
+
+                    # Add it as a buy signal.
                     conditions.append(('buys', condition_1))
 
+                # If we have a sell operator, grab it.
                 if indicators[indicator]['sell_operator']:
+
+                    # Grab the Sell Operator.
                     sell_condition_operator = indicators[indicator]['sell_operator']
 
+                    # Store it in a Pd.Series.
                     condition_2: pd.Series = sell_condition_operator(
                         indicator_1, indicator_2
                     )
-               
-                    condition_2 = condition_2.where(lambda x: x == True).dropna()               
+
+                    # keep the one's that aren't null.
+                    condition_2 = condition_2.where(lambda x: x == True).dropna()
+
+                    # Add it as a sell signal.
                     conditions.append(('sells', condition_2))
 
         return conditions

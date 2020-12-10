@@ -1,10 +1,8 @@
 import json
 import time as time_true
-import pprint
 import pathlib
 import pandas as pd
 
-from datetime import time
 from datetime import datetime
 from datetime import timezone
 from datetime import timedelta
@@ -12,7 +10,6 @@ from datetime import timedelta
 from typing import List
 from typing import Dict
 from typing import Union
-from typing import Optional
 
 from pyrobot.trades import Trade
 from pyrobot.portfolio import Portfolio
@@ -32,7 +29,7 @@ class PyRobot():
 
         Arguments:
         ----
-        client_id {str} -- The Consumer ID assigned to you during the App registration. 
+        client_id {str} -- The Consumer ID assigned to you during the App registration.
             This can be found at the app registration portal.
 
         redirect_uri {str} -- This is the redirect URL that you specified when you created your
@@ -40,7 +37,7 @@ class PyRobot():
 
         Keyword Arguments:
         ----
-        credentials_path {str} -- The path to the session state file used to prevent a full 
+        credentials_path {str} -- The path to the session state file used to prevent a full
             OAuth workflow. (default: {None})
 
         trading_account {str} -- Your TD Ameritrade account number. (default: {None})
@@ -95,8 +92,8 @@ class PyRobot():
         Usage:
         ----
             >>> trading_robot = PyRobot(
-            client_id=CLIENT_ID, 
-            redirect_uri=REDIRECT_URI, 
+            client_id=CLIENT_ID,
+            redirect_uri=REDIRECT_URI,
             credentials_path=CREDENTIALS_PATH
             )
             >>> pre_market_open_flag = trading_robot.pre_market_open
@@ -138,8 +135,8 @@ class PyRobot():
         Usage:
         ----
             >>> trading_robot = PyRobot(
-            client_id=CLIENT_ID, 
-            redirect_uri=REDIRECT_URI, 
+            client_id=CLIENT_ID,
+            redirect_uri=REDIRECT_URI,
             credentials_path=CREDENTIALS_PATH
             )
             >>> post_market_open_flag = trading_robot.post_market_open
@@ -181,8 +178,8 @@ class PyRobot():
         Usage:
         ----
             >>> trading_robot = PyRobot(
-            client_id=CLIENT_ID, 
-            redirect_uri=REDIRECT_URI, 
+            client_id=CLIENT_ID,
+            redirect_uri=REDIRECT_URI,
             credentials_path=CREDENTIALS_PATH
             )
             >>> market_open_flag = trading_robot.market_open
@@ -223,8 +220,8 @@ class PyRobot():
         Usage:
         ----
             >>> trading_robot = PyRobot(
-            client_id=CLIENT_ID, 
-            redirect_uri=REDIRECT_URI, 
+            client_id=CLIENT_ID,
+            redirect_uri=REDIRECT_URI,
             credentials_path=CREDENTIALS_PATH
             )
             >>> portfolio = trading_robot.create_portfolio()
@@ -265,8 +262,8 @@ class PyRobot():
         order_type {str} -- Defines the type of order to initalize. Possible values
             are `'mkt', 'lmt', 'stop', 'stop-lmt', 'trailign-stop'` (default: {'mkt'})
 
-        price {float} -- The Price to be associate with the order. If the order type is `stop` or `stop-lmt` then 
-            it is the stop price, if it is a `lmt` order then it is the limit price, and `mkt` is the market 
+        price {float} -- The Price to be associate with the order. If the order type is `stop` or `stop-lmt` then
+            it is the stop price, if it is a `lmt` order then it is the limit price, and `mkt` is the market
             price.(default: {0.0})
 
         stop_limit_price {float} -- Only used if the order is a `stop-lmt` and represents the limit price of
@@ -275,8 +272,8 @@ class PyRobot():
         Usage:
         ----
             >>> trading_robot = PyRobot(
-                client_id=CLIENT_ID, 
-                redirect_uri=REDIRECT_URI, 
+                client_id=CLIENT_ID,
+                redirect_uri=REDIRECT_URI,
                 credentials_path=CREDENTIALS_PATH
             )
             >>> new_trade = trading_robot_portfolio.create_trade(
@@ -333,6 +330,10 @@ class PyRobot():
             stop_limit_price=stop_limit_price
         )
 
+        # Set the Client.
+        trade.account = self.trading_account
+        trade._td_client = self.session
+
         self.trades[trade_id] = trade
 
         return trade
@@ -347,8 +348,8 @@ class PyRobot():
         Usage:
         ----
             >>> trading_robot = PyRobot(
-                client_id=CLIENT_ID, 
-                redirect_uri=REDIRECT_URI, 
+                client_id=CLIENT_ID,
+                redirect_uri=REDIRECT_URI,
                 credentials_path=CREDENTIALS_PATH
             )
             >>> new_trade = trading_robot_portfolio.create_trade(
@@ -372,8 +373,8 @@ class PyRobot():
         Usage:
         ----
             >>> trading_robot = PyRobot(
-                client_id=CLIENT_ID, 
-                redirect_uri=REDIRECT_URI, 
+                client_id=CLIENT_ID,
+                redirect_uri=REDIRECT_URI,
                 credentials_path=CREDENTIALS_PATH
             )
             >>> trading_robot_portfolio.add_position(
@@ -394,8 +395,8 @@ class PyRobot():
             }
 
             >>> trading_robot = PyRobot(
-            client_id=CLIENT_ID, 
-            redirect_uri=REDIRECT_URI, 
+            client_id=CLIENT_ID,
+            redirect_uri=REDIRECT_URI,
             credentials_path=CREDENTIALS_PATH
             )
             >>> trading_robot_portfolio.add_position(
@@ -562,18 +563,20 @@ class PyRobot():
         # Loop through each symbol.
         for symbol in self.portfolio.positions:
 
-            # Grab the request.
-            historical_prices_response = self.session.get_price_history(
-                symbol=symbol,
-                period_type='day',
-                start_date=start,
-                end_date=end,
-                frequency_type=bar_type,
-                frequency=bar_size,
-                extended_hours=True
-            )
+            try:
 
-            if 'error' in historical_prices_response:
+                # Grab the request.
+                historical_prices_response = self.session.get_price_history(
+                    symbol=symbol,
+                    period_type='day',
+                    start_date=start,
+                    end_date=end,
+                    frequency_type=bar_type,
+                    frequency=bar_size,
+                    extended_hours=True
+                )
+
+            except:
 
                 time_true.sleep(2)
 
@@ -611,8 +614,7 @@ class PyRobot():
         last_bar_timestamp {pd.DatetimeIndex} -- The last bar's timestamp.
         """
 
-        last_bar_time = last_bar_timestamp.to_pydatetime()[
-            0].replace(tzinfo=timezone.utc)
+        last_bar_time = last_bar_timestamp.to_pydatetime()[0].replace(tzinfo=timezone.utc)
         next_bar_time = last_bar_time + timedelta(seconds=60)
         curr_bar_time = datetime.now(tz=timezone.utc)
 
@@ -620,15 +622,14 @@ class PyRobot():
         next_bar_timestamp = int(next_bar_time.timestamp())
         curr_bar_timestamp = int(curr_bar_time.timestamp())
 
-        _time_to_wait_bar = next_bar_timestamp - last_bar_timestamp
         time_to_wait_now = next_bar_timestamp - curr_bar_timestamp
 
         if time_to_wait_now < 0:
             time_to_wait_now = 0
 
-        print("="*80)
+        print("=" * 80)
         print("Pausing for the next bar")
-        print("-"*80)
+        print("-" * 80)
         print("Curr Time: {time_curr}".format(
             time_curr=curr_bar_time.strftime("%Y-%m-%d %H:%M:%S")
         )
@@ -638,7 +639,7 @@ class PyRobot():
         )
         )
         print("Sleep Time: {seconds}".format(seconds=time_to_wait_now))
-        print("-"*80)
+        print("-" * 80)
         print('')
 
         time_true.sleep(time_to_wait_now)
@@ -716,7 +717,7 @@ class PyRobot():
 
                     # Set the Execution Flag.
                     trades_to_execute[symbol]['has_executed'] = True
-                    trade_obj: Trade = trades_to_execute[symbol]['trade_func']
+                    trade_obj: Trade = trades_to_execute[symbol]['buy']['trade_func']
 
                     if not self.paper_trading:
 
@@ -763,7 +764,7 @@ class PyRobot():
                             ownership=False
                         )
 
-                    trade_obj: Trade = trades_to_execute[symbol]['trade_func']
+                    trade_obj: Trade = trades_to_execute[symbol]['sell']['trade_func']
 
                     if not self.paper_trading:
 
@@ -818,6 +819,12 @@ class PyRobot():
             account=self.trading_account,
             order=trade_obj.order
         )
+
+        # Store the order.
+        trade_obj._order_response = order_dict
+
+        # Process the order response.
+        trade_obj._process_order_response()
 
         return order_dict
 
@@ -1149,8 +1156,6 @@ class PyRobot():
 
         if isinstance(positions_response, dict):
 
-        
-
             for account_type_key in positions_response:
 
                 account_info = positions_response[account_type_key]
@@ -1188,8 +1193,6 @@ class PyRobot():
         elif isinstance(positions_response, list):
 
             for account in positions_response:
-
-
 
                 for account_type_key in account:
 

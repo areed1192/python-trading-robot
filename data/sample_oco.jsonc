@@ -1,0 +1,48 @@
+{
+  "childOrderStrategies": [
+    {
+      "childOrderStrategies": [
+        {
+          "duration": "DAY",
+          "orderLegCollection": [
+            {
+              "instruction": "SELL",
+              "instrument": { "assetType": "EQUITY", "symbol": "MSFT" },
+              "quantity": 1
+            }
+          ],
+          "orderStrategyType": "SINGLE",
+          "orderType": "LIMIT",
+          "price": 218.4,
+          "session": "NORMAL"
+        },
+        {
+          "duration": "DAY",
+          "orderLegCollection": [
+            {
+              "instruction": "SELL",
+              "instrument": { "assetType": "EQUITY", "symbol": "MSFT" },
+              "quantity": 1
+            }
+          ],
+          "orderStrategyType": "SINGLE",
+          "orderType": "STOP",
+          "session": "NORMAL",
+          "stopPrice": 217.6
+        }
+      ],
+      "orderStrategyType": "OCO"
+    }
+  ],
+  "duration": "DAY",
+  "orderLegCollection": [
+    {
+      "instruction": "BUY",
+      "instrument": { "assetType": "EQUITY", "symbol": "MSFT" },
+      "quantity": 1
+    }
+  ],
+  "orderStrategyType": "TRIGGER",
+  "orderType": "MARKET",
+  "session": "NORMAL"
+}

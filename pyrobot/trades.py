@@ -1,8 +1,9 @@
 from datetime import datetime
 
 from typing import List
-from typing import Union
-from typing import Optional
+from typing import Dict
+
+from td.client import TDClient
 
 
 class Trade():
@@ -23,6 +24,9 @@ class Trade():
 
         self.order = {}
         self.trade_id = ""
+        self.order_id = ""
+        self.account = ""
+        self.order_status = "NOT_PLACED"
 
         self.side = ""
         self.side_opposite = ""
@@ -32,7 +36,9 @@ class Trade():
         self._order_response = {}
         self._triggered_added = False
         self._multi_leg = False
-
+        self._one_cancels_other = False
+        self._td_client: TDClient = None
+    
     def new_trade(self, trade_id: str, order_type: str, side: str, enter_or_exit: str, price: float = 0.00, stop_limit_price: float = 0.00) -> dict:
         """Creates a new Trade object template.
 
@@ -251,14 +257,22 @@ class Trade():
         else:
             self.order['orderLegCollection'][leg_id]['instruction'] = self.order_instructions[self.enter_or_exit][self.side_opposite]
 
-    def add_box_range(self, profit_size: float = 0.00, percentage: bool = False, stop_limit: bool = False):
-        """Adds a Stop Loss(or  Stop-Limit order), and a limit Order
+    def add_box_range(self, profit_size: float = 0.00, stop_size: float = 0.00,
+                      stop_percentage: bool = False,  profit_percentage: bool = False,
+                      stop_limit: bool = False, make_one_cancels_other: bool = True,
+                      limit_size: float = 0.00, limit_percentage: bool = False):
+        """Adds a Stop Loss(or Stop-Limit order), and a limit Order
 
         Arguments:
         ----
         profit_size {float} -- The size of desired profit. For example, `0.10`.
 
-        percentage {float} -- Specifies whether the `profit_size` is in absolute dollars `False` or
+        profit_percentage {float} -- Specifies whether the `profit_size` is in absolute dollars `False` or
+            in percentage terms `True`.
+
+        stop_size {float} -- The size of desired stop loss. For example, `0.10`.
+
+        stop_percentage {float} -- Specifies whether the `stop_size` is in absolute dollars `False` or
             in percentage terms `True`.
 
         Keyword Arguments:
@@ -270,11 +284,27 @@ class Trade():
             self._convert_to_trigger()
 
         # Add a take profit Limit order.
-        self.add_take_profit(profit_size=profit_size, percentage=percentage)
+        self.add_take_profit(
+            profit_size=profit_size,
+            percentage=profit_percentage
+        )
 
         # Add a stop Loss Order.
         if not stop_limit:
-            self.add_stop_loss(stop_size=profit_size, percentage=percentage)
+            self.add_stop_loss(
+                stop_size=profit_size,
+                percentage=stop_percentage
+            )
+        else:
+            self.add_stop_limit(
+                stop_size=profit_size,
+                limit_size=limit_size,
+                stop_percentage=stop_percentage,
+                limit_percentage=limit_percentage
+            )
+
+        if make_one_cancels_other:
+            self.add_one_cancels_other()
 
     def add_stop_loss(self, stop_size: float, percentage: bool = False) -> bool:
         """Add's a stop loss order to exit the position when a certain loss is reached.
@@ -306,11 +336,17 @@ class Trade():
         if percentage:
             adjustment = 1.0 - stop_size
             new_price = self._calculate_new_price(
-                price=price, adjustment=adjustment, percentage=True)
+                price=price,
+                adjustment=adjustment,
+                percentage=True
+            )
         else:
             adjustment = -stop_size
             new_price = self._calculate_new_price(
-                price=price, adjustment=adjustment, percentage=False)
+                price=price,
+                adjustment=adjustment,
+                percentage=False
+            )
 
         stop_loss_order = {
             "orderType": "STOP",
@@ -530,18 +566,55 @@ class Trade():
 
         return True
 
+    def add_one_cancels_other(self, orders: List[Dict] = None) -> Dict:
+        """Add's a One Cancel's Other Order
+
+        Arguments:
+        ----
+        orders {List[Dict]} -- A list of two orders that will cancel each other
+            if one of those orders are executed.
+
+        Returns:
+        ----
+        {Dict} -- A template that can be added to a Child Order Strategies list.
+        """
+
+        # Define the OCO Template
+        new_temp = [
+            {
+                'orderStrategyType': "OCO",
+                'childOrderStrategies':[]
+            }
+        ]
+        
+        # If we alread have a trigger than their are orders there.
+        if self._triggered_added:
+
+            # Grab the old ones.
+            old_orders = self.order['childOrderStrategies']
+
+            # Add them to the template.
+            new_temp[0]['childOrderStrategies'] = old_orders
+
+            # Set the new child order strategy.
+            self.order['childOrderStrategies'] = new_temp
+        
+        # Set it so we know it's a One Cancels Other.
+        self._one_cancels_other = True
+
     def _convert_to_trigger(self):
         """Converts a regular order to a trigger order.
 
         Overview:
         ----
-        Trigger orders can be used to have a stop loss orders, or take profit orders
-        placed right after the main order has been placed. This helps protect the order
-        when possible and take profit when thresholds are reached.    
+        Trigger orders can be used to have a stop loss orders, or take profit
+        orders placed right after the main order has been placed. This helps
+        protect the order when possible and take profit when thresholds are
+        reached.
         """
 
         # Only convert to a trigger order, if it already isn't one.
-        if self.order and self._triggered_added == False:
+        if self.order and not self._triggered_added:
             self.order['orderStrategyType'] = 'TRIGGER'
 
             # Trigger orders will have child strategies, so initalize that list.
@@ -754,3 +827,22 @@ class Trade():
             return False
         else:
             return True
+    
+    def _process_order_response(self) -> None:
+        """Processes an order response, after is has been submitted."""        
+        
+        self.order_id =  self._order_response["order_id"]
+        self.order_status = "QUEUED"
+    
+    def _update_order_status(self) -> None:
+
+        if self.order_id != "":
+
+            order_response = self._td_client.get_orders(
+                account=self.account,
+                order_id=self.order_id
+            )
+
+            self.order_response = order_response
+            self.order_status = self.order_response['status']
+

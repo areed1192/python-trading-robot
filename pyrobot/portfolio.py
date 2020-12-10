@@ -4,7 +4,6 @@ from pandas import DataFrame
 from typing import Tuple
 from typing import List
 from typing import Optional
-from typing import Iterable
 
 
 from pyrobot.stock_frame import StockFrame
@@ -419,7 +418,7 @@ class Portfolio():
         KeyError: If the symbol does not exist in the portfolio it will return an error.
         """
 
-        if self.in_portfolio(symbol=symbol) and self.positions[symbol]['ownership_status']:
+        if self.in_portfolio(symbol=symbol):
             self.positions[symbol]['ownership_status'] = ownership
         else:
             raise KeyError(
