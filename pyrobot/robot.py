@@ -691,9 +691,10 @@ class PyRobot():
                     trades_to_execute=trades_dict
                 )
         """
-
-        buys: pd.Series = signals[0][1]
-        sells: pd.Series = signals[1][1]
+        
+        # Define the Buy and sells.
+        buys: pd.Series = signals['buys']
+        sells: pd.Series = signals['sells']
 
         order_responses = []
 
@@ -840,9 +841,15 @@ class PyRobot():
         {bool} -- `True` if the orders were successfully saved.
         """
 
+        def default(obj):
+
+            if isinstance(obj, bytes):
+                return str(obj)
+
         # Define the folder.
         folder: pathlib.PurePath = pathlib.Path(
-            __file__).parents[1].joinpath("data")
+            __file__
+        ).parents[1].joinpath("data")
 
         # See if it exist, if not create it.
         if not folder.exists():
@@ -863,7 +870,7 @@ class PyRobot():
 
         # Write the new data back.
         with open(file='data/orders.json', mode='w+') as order_json:
-            json.dump(obj=orders_list, fp=order_json, indent=4)
+            json.dump(obj=orders_list, fp=order_json, indent=4, default=default)
 
         return True
 

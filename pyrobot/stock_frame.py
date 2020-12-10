@@ -255,7 +255,7 @@ class StockFrame():
         last_rows = self._symbol_groups.tail(1)
 
         # Define a list of conditions.
-        conditions = []
+        conditions = {}
 
         # Check to see if all the columns exist.
         if self.do_indicator_exist(column_names=indicators_key):
@@ -281,8 +281,8 @@ class StockFrame():
                 condition_1 = condition_1.where(lambda x: x == True).dropna()
                 condition_2 = condition_2.where(lambda x: x == True).dropna()
 
-                conditions.append(('buys', condition_1))
-                conditions.append(('sells', condition_2))
+                conditions['buys'] = condition_1
+                conditions['sells'] = condition_2
         
         # Store the indicators in a list.
         check_indicators = []
@@ -318,7 +318,7 @@ class StockFrame():
                     condition_1 = condition_1.where(lambda x: x == True).dropna()
 
                     # Add it as a buy signal.
-                    conditions.append(('buys', condition_1))
+                    conditions['buys'] = condition_1
 
                 # If we have a sell operator, grab it.
                 if indicators[indicator]['sell_operator']:
@@ -335,7 +335,7 @@ class StockFrame():
                     condition_2 = condition_2.where(lambda x: x == True).dropna()
 
                     # Add it as a sell signal.
-                    conditions.append(('sells', condition_2))
+                    conditions['sells'] = condition_2
 
         return conditions
 

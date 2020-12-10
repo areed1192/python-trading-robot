@@ -52,7 +52,7 @@ class Trade():
         obj_dict.update(self.__dict__)
 
         return obj_dict
-    
+
     def new_trade(self, trade_id: str, order_type: str, side: str, enter_or_exit: str, price: float = 0.00, stop_limit_price: float = 0.00) -> dict:
         """Creates a new Trade object template.
 
@@ -319,6 +319,8 @@ class Trade():
 
         if make_one_cancels_other:
             self.add_one_cancels_other()
+        
+        self.is_box_range = True
 
     def add_stop_loss(self, stop_size: float, percentage: bool = False) -> bool:
         """Add's a stop loss order to exit the position when a certain loss is reached.
@@ -341,11 +343,7 @@ class Trade():
         if not self._triggered_added:
             self._convert_to_trigger()
 
-        if self.order_type == 'mkt':
-            # Have to make a call to Get Quotes.
-            price = self.price
-        elif self.order_type == 'lmt':
-            price = self.price
+        price = self.grab_price()
 
         if percentage:
             adjustment = 1.0 - stop_size
@@ -413,13 +411,7 @@ class Trade():
         if not self._triggered_added:
             self._convert_to_trigger()
 
-        # Grab the price.
-        if self.order_type == 'mkt':
-            # Have to make a call to Get Quotes.
-            price = self.price
-
-        elif self.order_type == 'lmt':
-            price = self.price
+        price = self.grab_price()
 
         # Calculate the Stop Price.
         if stop_percentage:
@@ -509,6 +501,35 @@ class Trade():
             new_price = round(new_price, 2)
 
         return new_price
+    
+    def grab_price(self) -> float:
+        """Grabs the current price of the order.
+
+        Returns
+        -------
+        float
+            The price rounded to 2 decimal places.
+        """        
+
+        # We need to basis to calculate off of. Use the price.
+        if self.order_type == 'mkt':
+
+            quote = self._td_client.get_quotes(instruments=[self.symbol])
+
+            # Have to make a call to Get Quotes.
+            price = quote[self.symbol]['lastPrice']
+
+        elif self.order_type == 'lmt':
+            price = self.price
+        
+        else:
+
+            quote = self._td_client.get_quotes(instruments=[self.symbol])
+
+            # Have to make a call to Get Quotes.
+            price = quote[self.symbol]['lastPrice']
+        
+        return round(price, 2)
 
     def add_take_profit(self, profit_size: float, percentage: bool = False) -> bool:
         """Add's a Limit Order to exit a trade when a profit threshold is reached.
@@ -531,13 +552,8 @@ class Trade():
         # Check to see if we have a trigger order.
         if not self._triggered_added:
             self._convert_to_trigger()
-
-        # We need to basis to calculate off of. Use the price.
-        if self.order_type == 'mkt':
-            # Have to make a call to Get Quotes.
-            price = self.price
-        elif self.order_type == 'lmt':
-            price = self.price
+        
+        price = self.grab_price()
 
         # Calculate the new price.
         if percentage:
@@ -842,6 +858,21 @@ class Trade():
         else:
             return True
     
+    @property
+    def is_trigger_order(self) -> bool:
+        """Specifies whether the order is a trigger order.
+
+        Returns:
+        ----
+        bool: `True` if the order is a contains a trigger,
+            `False` otherwise.
+        """
+
+        if self._triggered_added:
+            return True
+        else:
+            return False
+
     def _process_order_response(self) -> None:
         """Processes an order response, after is has been submitted."""        
         
@@ -874,4 +905,23 @@ class Trade():
         from pyrobot.order_status import OrderStatus
 
         return OrderStatus(trade_obj=self)
+
+    def update_children(self) -> None:
+        """Updates the Price info of the children info."""        
+
+        # Grab the children.
+        children = self.order['childOrderStrategies'][0]['childOrderStrategies']
+
+        # Loop through each child.
+        for order in children:
+            
+            # Get the latest price.
+            quote = self._td_client.get_quotes(instruments=[self.symbol])
+            last_price = quote[self.symbol]['lastPrice']
+            
+            # Update the price.
+            if order['orderType'] == 'STOP':
+                order['stopPrice'] = round(order['stopPrice'] + last_price, 2)
+            elif order['orderType'] == 'LIMIT':
+                order['price'] = round(order['price'] + last_price, 2)
 
