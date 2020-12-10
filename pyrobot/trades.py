@@ -4,6 +4,7 @@ from typing import List
 from typing import Dict
 
 from td.client import TDClient
+from pyrobot.order_status import OrderStatus
 
 
 class Trade():
@@ -835,6 +836,7 @@ class Trade():
         self.order_status = "QUEUED"
     
     def _update_order_status(self) -> None:
+        """Updates the current order status, to reflect what's on TD."""        
 
         if self.order_id != "":
 
@@ -845,4 +847,16 @@ class Trade():
 
             self.order_response = order_response
             self.order_status = self.order_response['status']
+    
+    def check_status(self) -> OrderStatus:
+        """Used to easily identify the order status.
+
+        Returns
+        -------
+        OrderStatus
+            An order status object that provides simple
+            properties to grab the order status.
+        """        
+
+        return OrderStatus(trade_obj=self)
 
