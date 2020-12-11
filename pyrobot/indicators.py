@@ -1017,9 +1017,6 @@ class Indicators():
 
             # Update the function.
             indicator_function(**indicator_argument)
-    
-    def grab_comparison_indicator(self) -> dict:
-        pass
 
     def check_signals(self) -> Union[pd.DataFrame, None]:
         """Checks to see if any signals have been generated.

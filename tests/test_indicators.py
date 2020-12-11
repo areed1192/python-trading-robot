@@ -12,7 +12,6 @@ from datetime import datetime
 from datetime import timedelta
 from configparser import ConfigParser
 
-
 from pyrobot.robot import PyRobot
 from pyrobot.indicators import Indicators
 from pyrobot.stock_frame import StockFrame
