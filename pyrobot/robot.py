@@ -362,7 +362,45 @@ class PyRobot():
 
         if index in self.trades:
             del self.trades[index]
+    
+    
+    def grab_any_live_quote(self, symbol: str) -> dict:
+        """Grabs the current quote for any symbol.
 
+        Makes a call to the TD Ameritrade Get Quotes endpoint with the
+        symbol you send as an argument. Returns a dictionary.
+
+        Usage:
+        ----
+            >>> trading_robot = PyRobot(
+                client_id=CLIENT_ID,
+                redirect_uri=REDIRECT_URI,
+                credentials_path=CREDENTIALS_PATH
+            )
+            
+            >>> current_quote = trading_robot.grab_any_live_quote(symbol = 'MSFT')
+            >>> current_quote
+            {
+                "MSFT": {
+                    "assetType": "EQUITY",
+                    "assetMainType": "EQUITY",
+                    "cusip": "594918104",
+                    ...
+                    "regularMarketPercentChangeInDouble": 0,
+                    "delayed": true
+                }
+            }
+
+        Returns:
+        ----
+        dict -- A dictionary containing the quote for the symbol provided.
+
+        """
+        
+        # Grab the quote.
+        quote = self.session.get_quotes(symbol)
+    
+    
     def grab_current_quotes(self) -> dict:
         """Grabs the current quotes for all positions in the portfolio.
 
