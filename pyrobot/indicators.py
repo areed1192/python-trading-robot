@@ -281,7 +281,7 @@ class Indicators():
         relative_strength_index = 100.0 - (100.0 / (1.0 + relative_strength))
 
         # Add the info to the data frame.
-        self._frame['rsi'] = np.where(relative_strength_index == 0, 100, 100 - (100 / (1 + relative_strength_index)))
+        self._frame['rsi'] = np.where(relative_strength_index == 0, 100, 100.0 - (100.0 / (1.0 + relative_strength)))
 
         # Clean up before sending back.
         self._frame.drop(
